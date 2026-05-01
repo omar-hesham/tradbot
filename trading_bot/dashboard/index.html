@@ -1,0 +1,2938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Crypto Trading Bot</title>
+    <script src="/static/js/tailwind.js"></script>
+    <script defer src="/static/js/alpine.min.js"></script>
+    <script src="/static/js/lightweight-charts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/fontawesome.min.css">
+    <style>
+        [x-cloak]{display:none!important}
+        *{box-sizing:border-box;}
+        body{background:#080c18;font-family:'Inter',system-ui,-apple-system,sans-serif;color:#e2e8f0;}
+        ::-webkit-scrollbar{width:4px;height:4px;}
+        ::-webkit-scrollbar-track{background:#080c18;}
+        ::-webkit-scrollbar-thumb{background:#1e2d4a;border-radius:4px;}
+        .card{background:#0d1426;border:1px solid #1a2640;border-radius:14px;}
+        .input{background:#080c18;border:1px solid #1a2640;border-radius:8px;color:#e2e8f0;
+               padding:8px 12px;width:100%;outline:none;transition:border-color .2s;font-size:.875rem;}
+        .input:focus{border-color:#3b82f6;}
+        select.input option{background:#0d1426;}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+             padding:8px 16px;border-radius:8px;font-weight:600;font-size:.875rem;
+             cursor:pointer;transition:all .2s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;}
+        .btn-primary:hover{opacity:.9;}
+        .btn-ghost{background:#1a2640;color:#94a3b8;border:1px solid #1e2d4a;}
+        .btn-ghost:hover{color:#e2e8f0;border-color:#2d3f5e;}
+        .btn-success{background:linear-gradient(135deg,#00d4aa,#0ea5e9);color:#fff;}
+        .btn-success:hover{opacity:.9;}
+        .btn-danger{background:#991b1b;color:#fca5a5;}
+        .btn-danger:hover{background:#7f1d1d;}
+        .nav-link{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;
+                  font-size:.8125rem;font-weight:500;color:#64748b;cursor:pointer;transition:all .2s;}
+        .nav-link:hover{color:#e2e8f0;background:rgba(255,255,255,.05);}
+        .nav-link.active{color:#fff;background:rgba(255,255,255,.1);}
+        .badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;
+               font-size:.6875rem;font-weight:700;letter-spacing:.03em;}
+        .badge-green{background:#052e20;color:#00d4aa;border:1px solid #00d4aa33;}
+        .badge-red{background:#2d0f0f;color:#f87171;border:1px solid #f8717133;}
+        .badge-blue{background:#0f1e3d;color:#60a5fa;border:1px solid #60a5fa33;}
+        .badge-orange{background:#2d1a00;color:#fb923c;border:1px solid #fb923c33;}
+        .badge-gray{background:#1e2d4a;color:#64748b;}
+        .table-row:hover{background:#111827;}
+        @keyframes pulse-dot{0%,100%{opacity:1;}50%{opacity:.4;}}
+        .pulse-dot{animation:pulse-dot 1.5s ease-in-out infinite;}
+        @keyframes slide-in-right{from{transform:translateX(110%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+        .toast-slide{animation:slide-in-right .25s ease-out;}
+        .stat-val{font-size:1.625rem;font-weight:700;letter-spacing:-.02em;line-height:1;}
+        .section-label{font-size:.6875rem;font-weight:600;text-transform:uppercase;
+                       letter-spacing:.08em;color:#475569;margin-bottom:6px;}
+        
+        /* Lint Cleanups */
+        .toast-container{max-width:360px;min-width:280px;}
+        .brand-logo-bg{background:linear-gradient(135deg,#00d4aa 0%,#3b82f6 100%);}
+        .status-container{background:#0d1426;border:1px solid #1a2640;}
+        .search-container{max-width:320px;}
+        .search-input-box{padding-left:34px;}
+        .sort-select-box{width:auto;}
+        .chart-box{height:300px;background:#0d1426;}
+        .sidebar-gradient{background:linear-gradient(135deg,#0d1426,#080c18);border:1px solid #1a2640;}
+        .progress-bg{height:2px;}
+        .progress-fill{background:#3b82f6;height:2px;}
+        .progress-empty{background:rgba(255,255,255,0.05);height:2px;}
+        .placeholder-height{height:100px;}
+        .log-scroll{max-height:160px;overflow-y:auto;}
+        .balance-card-glass{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+        .icon-blue-bg{background:rgba(59,130,246,0.1);color:#3b82f6;}
+        .balance-mini-box{background:rgba(15,23,42,0.5);border:1px solid #1e293b;}
+        .decision-glass{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+        .model-scroll{max-height:220px;overflow-y:auto;}
+        
+        /* Final Batch of Classes */
+        .btn-trade-custom{background:#052e20;color:#00d4aa;border:1px solid #00d4aa33;}
+        .text-tip{color:#00d4aa;}
+        .wallet-scroll{max-height:340px;overflow-y:auto;}
+        .asset-icon-bg{background:#1a2640;}
+        .badge-funding{background:#1c1040;color:#a78bfa;border:1px solid #a78bfa33;}
+        .stat-mini-card{background:#080c18;border:1px solid #1a2640;}
+        .position-scroll{max-height:280px;overflow-y:auto;}
+        .decision-scroll{max-height:360px;overflow-y:auto;}
+        .btn-binance-save{background:linear-gradient(135deg,#d97706,#dc2626);}
+        .btn-strategy-save{background:linear-gradient(135deg,#7c3aed,#4f46e5);}
+        .modal-overlay{background:rgba(0,0,0,.75);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);}
+        .modal-card{max-width:420px;box-shadow:0 0 40px rgba(251,146,60,.15);}
+        .modal-warning-bg{background:#2d1a00;border:1px solid #fb923c44;}
+        .toggle-wrapper{border:1px solid #1a2640;}
+        
+        /* Scanning Animations */
+        @keyframes scan-line{0%{top:-10%}100%{top:110%}}
+        .scan-laser{height:2px;background:linear-gradient(90deg,transparent,rgba(59,130,246,.8),transparent);box-shadow:0 0 15px rgba(59,130,246,.5);animation:scan-line 2s linear infinite;}
+        .skeleton-pulse{background:linear-gradient(90deg,#0d1426 25%,#1a2640 50%,#0d1426 75%);background-size:200% 100%;animation:skeleton-loading 1.5s infinite;}
+        @keyframes skeleton-loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+        /* Analytics Hub Styles */
+        @keyframes gauge-fill{from{stroke-dashoffset:283}to{stroke-dashoffset:var(--gauge-offset)}}
+        .gauge-ring{transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+        @keyframes count-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .count-up{animation:count-up .6s ease-out forwards;}
+        @keyframes bar-grow{from{width:0}to{width:var(--bar-w)}}
+        .bar-grow{animation:bar-grow .8s cubic-bezier(.4,0,.2,1) forwards;}
+        .metric-glass{background:linear-gradient(135deg,rgba(13,20,38,.9),rgba(8,12,24,.95));border:1px solid #1a264066;}
+        .glow-green{box-shadow:0 0 20px rgba(0,212,170,.08);}
+        .glow-red{box-shadow:0 0 20px rgba(248,113,113,.08);}
+        .glow-blue{box-shadow:0 0 20px rgba(59,130,246,.08);}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+        .float-anim{animation:float 3s ease-in-out infinite;}
+        .heatmap-cell{transition:all .3s ease;border-radius:6px;}
+        .heatmap-cell:hover{transform:scale(1.08);z-index:10;}
+    </style>
+</head>
+<body x-data="app()" x-init="init()">
+
+<!-- ── Toast Stack ── -->
+<div class="fixed top-4 right-4 z-50 flex flex-col gap-2 toast-container">
+    <template x-for="t in toasts" :key="t.id">
+        <div class="toast-slide flex items-start gap-3 px-4 py-3 rounded-xl shadow-2xl"
+             :style="t.type==='success'?'background:#052e20;border:1px solid #00d4aa44;':
+                     t.type==='error'  ?'background:#2d0f0f;border:1px solid #f8717144;':
+                                        'background:#0f1e3d;border:1px solid #60a5fa44;'">
+            <i class="fas text-sm mt-0.5 flex-shrink-0"
+               :class="t.type==='success'?'fa-circle-check text-emerald-400':
+                        t.type==='error'  ?'fa-circle-xmark text-red-400':
+                                           'fa-circle-info text-blue-400'"></i>
+            <span class="text-sm text-gray-200 flex-1" x-text="t.msg"></span>
+            <button @click="dismissToast(t.id)" class="text-gray-600 hover:text-gray-300 text-xs flex-shrink-0">✕</button>
+        </div>
+    </template>
+</div>
+
+<!-- ── Navbar ── -->
+<nav class="fixed top-0 inset-x-0 z-40 h-13 bg-[#080c18] border-b border-[#1a2640]">
+    <div class="max-w-screen-2xl mx-auto px-5 flex items-center justify-between h-[52px]">
+        <!-- Brand -->
+        <div class="flex items-center gap-5">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 brand-logo-bg">
+                    <i class="fas fa-robot text-white text-xs"></i>
+                </div>
+                <span class="font-bold text-white tracking-tight">Crypto<span class="text-blue-400 font-normal">Bot</span></span>
+            </div>
+            <!-- Nav links -->
+            <div class="flex items-center gap-0.5">
+                <template x-for="lnk in [{id:'market',icon:'fa-chart-candlestick',label:'Market'},
+                                          {id:'analytics',icon:'fa-chart-column',label:'Analytics'},
+                                          {id:'backtest',icon:'fa-vial-circle-check',label:'Backtest'},
+                                          {id:'wallets',icon:'fa-wallet',label:'Wallets'},
+                                          {id:'trading',icon:'fa-robot',label:'Trading'},
+                                          {id:'portfolio',icon:'fa-briefcase',label:'AI Portfolio'},
+                                          {id:'history',icon:'fa-clock-rotate-left',label:'History'},
+                                          {id:'knowledge',icon:'fa-book-atlas',label:'RAG Knowledge'},
+                                          {id:'settings',icon:'fa-sliders',label:'Settings'}]" :key="lnk.id">
+                    <button class="nav-link" :class="page===lnk.id?'active':''" @click="page=lnk.id">
+                        <i class="fas text-xs" :class="lnk.icon"></i>
+                        <span x-text="lnk.label"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+        <!-- Right status -->
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg status-container">
+                <div class="relative w-2 h-2 flex-shrink-0">
+                    <div x-show="botRunning" class="pulse-dot absolute inset-0 rounded-full bg-emerald-400 opacity-60"></div>
+                    <div class="absolute inset-0 rounded-full" :class="botRunning?'bg-emerald-400':'bg-slate-600'"></div>
+                </div>
+                <span class="text-xs font-bold" :class="botRunning?'text-emerald-400':'text-slate-500'"
+                      x-text="botRunning?'RUNNING':'STOPPED'"></span>
+            </div>
+            <span class="badge" :class="tradingMode==='PAPER'?'badge-blue':'badge-orange'" x-text="tradingMode"></span>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Page body ── -->
+<main class="max-w-screen-2xl mx-auto px-5 py-5 pt-[68px]">
+
+
+<!-- ════════════════════════════════
+     MARKET
+════════════════════════════════ -->
+<div x-show="page==='market'" x-cloak>
+    <!-- toolbar -->
+    <div class="flex items-center gap-3 mb-4">
+        <div class="relative flex-1 search-container">
+            <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-xs"></i>
+            <input type="text" x-model="search" @input="filterCoins()"
+                   placeholder="Search symbol…" class="input search-input-box">
+        </div>
+        <select x-model="sortBy" @change="filterCoins()" class="input sort-select-box">
+            <option value="volume">Volume ↓</option>
+            <option value="change">24h % ↓</option>
+            <option value="price">Price ↓</option>
+        </select>
+        <button class="btn btn-ghost" @click="loadMarket()">
+            <i class="fas fa-rotate text-xs" :class="marketLoading?'fa-spin':''"></i>
+            Refresh
+        </button>
+    </div>
+
+    <div class="grid grid-cols-12 gap-4">
+        <!-- Chart -->
+        <div class="col-span-12 lg:col-span-8 card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="font-semibold text-base" x-text="selectedCoin||'Pick a coin →'"></span>
+                    <template x-if="selectedCoinData">
+                        <span class="badge text-xs font-semibold"
+                              :class="parseFloat(selectedCoinData.change||0)>=0?'badge-green':'badge-red'"
+                              x-text="(parseFloat(selectedCoinData.change||0)>=0?'+':'')+parseFloat(selectedCoinData.change||0).toFixed(2)+'%'"></span>
+                    </template>
+                </div>
+                <div class="flex items-center gap-1">
+                    <template x-for="iv in ['1m','5m','15m','1h','4h','1d']" :key="iv">
+                        <button @click="interval=iv;loadChart()"
+                                class="px-2.5 py-1 rounded text-xs font-medium transition-all"
+                                :class="interval===iv?'bg-blue-600 text-white':'text-slate-500 hover:text-white hover:bg-white/10'"
+                                x-text="iv"></button>
+                    </template>
+                </div>
+            </div>
+            <div id="chart" class="rounded-lg overflow-hidden chart-box"></div>
+        </div>
+
+        <!-- Order book -->
+        <div class="col-span-12 lg:col-span-4 card p-4">
+            <div class="section-label mb-3">Order Book</div>
+            <div x-show="!orderBook" class="text-center py-12 text-slate-600 text-sm">Select a coin</div>
+            <div x-show="orderBook">
+                <div class="space-y-0.5 mb-2">
+                    <template x-for="(a,i) in (orderBook?.asks||[]).slice(0,7).reverse()" :key="i">
+                        <div class="flex justify-between items-center px-2 py-0.5 rounded hover:bg-white/5">
+                            <span class="text-red-400 font-mono text-xs font-medium" x-text="parseFloat(a[0]).toFixed(2)"></span>
+                            <div class="flex-1 mx-3">
+                                <div class="h-0.5 bg-red-900/50 rounded"
+                                     :style="`width:${Math.min(100,(parseFloat(a[1])/(orderBook?.asks?.reduce((s,x)=>s+parseFloat(x[1]),0)||1))*100)}%`"></div>
+                            </div>
+                            <span class="text-slate-500 font-mono text-xs" x-text="parseFloat(a[1]).toFixed(4)"></span>
+                        </div>
+                    </template>
+                </div>
+                <div class="text-center py-2 text-sm font-bold border-y border-[#1a2640]">
+                    <span x-text="'$'+(parseFloat(orderBook?.best_ask||0)).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})"></span>
+                    <span class="text-xs text-slate-600 ml-2"
+                          x-text="orderBook?'spread '+(orderBook.spread_pct||0).toFixed(3)+'%':''"></span>
+                </div>
+                <div class="space-y-0.5 mt-2">
+                    <template x-for="(b,i) in (orderBook?.bids||[]).slice(0,7)" :key="i">
+                        <div class="flex justify-between items-center px-2 py-0.5 rounded hover:bg-white/5">
+                            <span class="text-emerald-400 font-mono text-xs font-medium" x-text="parseFloat(b[0]).toFixed(2)"></span>
+                            <div class="flex-1 mx-3">
+                                <div class="h-0.5 bg-emerald-900/50 rounded"
+                                     :style="`width:${Math.min(100,(parseFloat(b[1])/(orderBook?.bids?.reduce((s,x)=>s+parseFloat(x[1]),0)||1))*100)}%`"></div>
+                            </div>
+                            <span class="text-slate-500 font-mono text-xs" x-text="parseFloat(b[1]).toFixed(4)"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coin list -->
+        <div class="col-span-12 card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div class="section-label mb-0">Markets</div>
+                <span class="text-xs text-slate-600" x-text="filtered.length+' pairs'"></span>
+            </div>
+            <div class="max-h-[400px] overflow-y-auto">
+                <table class="w-full">
+                    <thead class="sticky top-0 bg-[#0d1426]">
+                        <tr class="text-xs text-slate-600 uppercase tracking-wider border-b border-[#1a2640]">
+                            <th class="text-left py-2.5 px-3">Pair</th>
+                            <th class="text-right py-2.5 px-3">Price</th>
+                            <th class="text-right py-2.5 px-3">24h %</th>
+                            <th class="text-right py-2.5 px-3">Volume</th>
+                            <th class="py-2.5 px-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="c in filtered" :key="c.symbol">
+                            <tr @click="selectCoin(c.symbol)"
+                                class="table-row cursor-pointer border-b text-sm border-[#111827]">
+                                <td class="py-2.5 px-3">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                             style="background:linear-gradient(135deg,#1a2640,#243352);"
+                                             x-text="c.symbol.replace('USDT','').slice(0,2)"></div>
+                                        <div>
+                                            <span class="font-semibold" x-text="c.symbol.replace('USDT','')"></span>
+                                            <span class="text-slate-600 text-xs ml-1">/USDT</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2.5 px-3 text-right font-mono font-medium"
+                                    x-text="'$'+parseFloat(c.price).toLocaleString(undefined,{minimumFractionDigits:c.price<1?4:2,maximumFractionDigits:c.price<1?4:2})"></td>
+                                <td class="py-2.5 px-3 text-right">
+                                    <span class="badge"
+                                          :class="parseFloat(c.change||0)>=0?'badge-green':'badge-red'"
+                                          x-text="(parseFloat(c.change||0)>=0?'+':'')+parseFloat(c.change||0).toFixed(2)+'%'"></span>
+                                </td>
+                                <td class="py-2.5 px-3 text-right text-slate-500 font-mono text-xs" x-text="fmtNum(c.volume)"></td>
+                                <td class="py-2.5 px-3">
+                                    <button @click.stop="quickTrade(c.symbol)"
+                                            class="px-2.5 py-1 rounded text-xs font-semibold transition-all hover:opacity-90 btn-trade-custom">Trade</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     WALLETS
+════════════════════════════════ -->
+<div x-show="page==='wallets'" x-cloak>
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-white">Wallets</h2>
+            <div x-show="showLiveWallet" x-transition class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-widest animate-pulse">
+                Live Data
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <!-- Premium Toggle -->
+            <label class="relative inline-flex items-center cursor-pointer group">
+                <input type="checkbox" x-model="showLiveWallet" @change="loadWallets()" class="sr-only peer">
+                <div class="w-12 h-6 bg-slate-800 border border-slate-700 rounded-full peer peer-checked:after:translate-x-6 peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-slate-500 after:rounded-full after:h-[18px] after:w-[18px] after:transition-all peer-checked:bg-emerald-600/30 peer-checked:border-emerald-500/50 peer-checked:after:bg-emerald-400 shadow-[0_0_15px_rgba(0,0,0,0.5)]"></div>
+                <div class="ml-3 flex flex-col">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-slate-300 transition-colors">Wallet Source</span>
+                    <span class="text-xs font-bold text-slate-300" x-text="showLiveWallet ? 'Binance Live' : 'Paper Environment'"></span>
+                </div>
+            </label>
+
+            <button @click="loadWallets()" class="w-10 h-10 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-xl hover:bg-slate-700 hover:border-slate-600 hover:text-emerald-400 transition-all active:scale-90">
+                <i class="fas fa-sync-alt text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-4 mb-4">
+        <div class="card p-5">
+            <div class="section-label">Total Portfolio</div>
+            <div class="stat-val" x-text="'$'+totalValue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})"></div>
+            <div class="text-xs mt-2 text-tip">All wallets combined</div>
+        </div>
+        <div class="card p-5">
+            <div class="section-label">Spot Wallet</div>
+            <div class="stat-val text-blue-400" x-text="'$'+spotVal.toFixed(2)"></div>
+            <div class="text-xs text-slate-600 mt-2" x-text="spotBal.length+' assets'"></div>
+        </div>
+        <div class="card p-5">
+            <div class="section-label">Funding Wallet</div>
+            <div class="stat-val text-violet-400" x-text="'$'+fundVal.toFixed(2)"></div>
+            <div class="text-xs text-slate-600 mt-2" x-text="fundBal.length+' assets'"></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+        <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="section-label mb-0">Spot Wallet</div>
+                <span class="badge badge-blue">SPOT</span>
+            </div>
+            <div class="wallet-scroll space-y-1">
+                <template x-for="b in spotBal" :key="b.asset">
+                    <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/5 transition-colors">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 asset-icon-bg"
+                                 x-text="b.asset.slice(0,2)"></div>
+                            <div>
+                                <div class="font-semibold text-sm" x-text="b.asset"></div>
+                                <div class="text-xs text-slate-600" x-text="'Value: $'+(b.usd_value||0).toLocaleString(undefined,{minimumFractionDigits:2})"></div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono font-semibold text-sm" x-text="b.total.toFixed(6)"></div>
+                            <div x-show="b.locked>0" class="text-xs text-yellow-500" x-text="'Locked: '+b.locked.toFixed(6)"></div>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="spotBal.length===0" class="text-center py-10 text-slate-600 text-sm">No assets</div>
+            </div>
+        </div>
+        <div class="card p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="section-label mb-0">Funding Wallet</div>
+                <span class="badge badge-funding">FUNDING</span>
+            </div>
+            <div class="wallet-scroll space-y-1">
+                <template x-for="b in fundBal" :key="b.asset">
+                    <div class="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/5 transition-colors">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 asset-icon-bg"
+                                 x-text="b.asset.slice(0,2)"></div>
+                            <div class="font-semibold text-sm" x-text="b.asset"></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono font-semibold text-sm" x-text="b.total.toFixed(6)"></div>
+                            <div class="text-[10px] text-slate-600" x-text="'$'+(b.usd_value||0).toFixed(2)"></div>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="fundBal.length===0" class="text-center py-10 text-slate-600 text-sm">No assets</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     TRADING
+════════════════════════════════ -->
+<div x-show="page==='trading'" x-cloak>
+    <!-- PHASE 5: LIVE APPROVAL QUEUE -->
+    <template x-if="liveRequests.length > 0">
+        <div class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-red-500/20 border border-amber-500/30 backdrop-blur-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
+                    <i class="fas fa-shield-check text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-white uppercase tracking-tighter">Phase 5: Live Trade Approval</h3>
+                    <p class="text-[10px] text-amber-500/70 font-bold uppercase tracking-widest">Manual Oversight Required for Real Capital</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <template x-for="req in liveRequests" :key="req.id">
+                    <div class="card p-4 border-amber-500/20 bg-black/40">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter"
+                                  :class="req.side === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'"
+                                  x-text="req.side"></span>
+                            <span class="text-xs font-black text-white" x-text="req.symbol"></span>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-slate-500">Allocation</span>
+                                <span class="text-white font-mono" x-text="'$' + req.allocation_usd.toFixed(2)"></span>
+                            </div>
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-slate-500">Qty</span>
+                                <span class="text-slate-300 font-mono" x-text="req.quantity.toFixed(4)"></span>
+                            </div>
+                            <div class="p-2 rounded-lg bg-white/5 text-[9px] text-slate-400 leading-relaxed italic line-clamp-3" x-text="req.ai_reason"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button @click="approveLiveRequest(req)" class="py-2 rounded-lg bg-emerald-600 text-white text-[10px] font-bold uppercase hover:bg-emerald-500 transition-colors">Approve</button>
+                            <button @click="rejectLiveRequest(req)" class="py-2 rounded-lg bg-white/5 text-slate-400 text-[10px] font-bold uppercase hover:bg-red-500/20 hover:text-red-400 transition-colors">Reject</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <div class="grid grid-cols-12 gap-4">
+
+        <!-- Bot control -->
+        <div class="col-span-12 lg:col-span-4 card p-5">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-robot text-blue-400 text-sm"></i>
+                <span class="font-semibold">AI Bot</span>
+            </div>
+            <button @click="toggleBot()"
+                    class="btn w-full py-3 rounded-xl font-bold mb-4"
+                    :class="botRunning?'btn-danger':'btn-success'">
+                <i class="fas text-sm" :class="botRunning?'fa-stop':'fa-play'"></i>
+                <span x-text="botRunning?'Stop Bot':'Start Bot'"></span>
+            </button>
+            <div class="mb-3">
+                <div class="section-label">Target Symbol</div>
+                <select x-model="targetSym" class="input">
+                    <template x-for="s in symbols.slice(0,60)" :key="s">
+                        <option :value="s" x-text="s"></option>
+                    </template>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mt-4">
+                <div class="rounded-xl p-3 stat-mini-card">
+                    <div class="text-xs text-slate-600 mb-1">Positions</div>
+                    <div class="text-2xl font-bold" x-text="positions.length"></div>
+                </div>
+                <div class="rounded-xl p-3 stat-mini-card">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Total BNL</div>
+                        <div class="text-lg font-black" :class="totalPnl>=0?'text-emerald-400':'text-red-400'"
+                             x-text="(totalPnl>=0?'+':'')+'$'+Math.abs(totalPnl).toFixed(2)"></div>
+                    </div>
+                    <div class="space-y-1 pt-2 border-t border-white/5">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-slate-500">Realized</span>
+                            <span class="font-mono" :class="realizedPnl>=0?'text-emerald-500/80':'text-red-500/80'" x-text="(realizedPnl>=0?'+':'')+'$'+realizedPnl.toFixed(2)"></span>
+                        </div>
+                        <div class="flex justify-between text-[10px]">
+                            <span class="text-slate-500">Unrealized</span>
+                            <span class="font-mono" :class="unrealizedPnl>=0?'text-emerald-500/80':'text-red-500/80'" x-text="(unrealizedPnl>=0?'+':'')+'$'+unrealizedPnl.toFixed(2)"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual order -->
+        <div class="col-span-12 lg:col-span-4 card p-5">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-pen-to-square text-violet-400 text-sm"></i>
+                <span class="font-semibold">Manual Order</span>
+            </div>
+            <div class="mb-3">
+                <div class="section-label">Symbol</div>
+                <select x-model="manualSym" class="input">
+                    <template x-for="s in symbols.slice(0,60)" :key="s">
+                        <option :value="s" x-text="s"></option>
+                    </template>
+                </select>
+            </div>
+            <div class="flex gap-2 mb-3">
+                <button @click="manualSide='BUY'"
+                        class="flex-1 py-2 rounded-lg font-bold text-sm transition-all border"
+                        :class="manualSide==='BUY'?'bg-emerald-600 border-emerald-600 text-white':'border-slate-700 text-slate-500 hover:text-white'">BUY</button>
+                <button @click="manualSide='SELL'"
+                        class="flex-1 py-2 rounded-lg font-bold text-sm transition-all border"
+                        :class="manualSide==='SELL'?'bg-red-600 border-red-600 text-white':'border-slate-700 text-slate-500 hover:text-white'">SELL</button>
+            </div>
+            <div class="mb-4">
+                <div class="section-label">Quantity</div>
+                <input type="number" step="0.0001" x-model="manualQty" placeholder="0.00000" class="input font-mono">
+            </div>
+            <button @click="placeOrder()"
+                    class="btn w-full py-3 rounded-xl font-bold"
+                    :class="manualSide==='BUY'?'bg-emerald-600 text-white hover:bg-emerald-700':'bg-red-600 text-white hover:bg-red-700'"
+                    x-text="manualSide+' '+manualSym"></button>
+        </div>
+
+        <!-- Positions -->
+        <div class="col-span-12 lg:col-span-4 card p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-layer-group text-yellow-400 text-sm"></i>
+                    <span class="font-semibold">Open Positions</span>
+                </div>
+                <span class="badge badge-gray" x-text="positions.length+' open'"></span>
+            </div>
+            <div class="position-scroll space-y-2">
+                <template x-for="p in positions" :key="p.id">
+                    <div class="rounded-xl p-3 stat-mini-card">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-semibold text-sm" x-text="p.symbol"></span>
+                            <span class="text-sm font-semibold font-mono"
+                                  :class="p.unrealized_pnl>=0?'text-emerald-400':'text-red-400'"
+                                  x-text="(p.unrealized_pnl>=0?'+':'')+'$'+p.unrealized_pnl.toFixed(2)"></span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-600">
+                            <span x-text="'Qty: '+p.quantity.toFixed(6)"></span>
+                            <span x-text="'Entry: $'+p.avg_entry_price.toFixed(2)"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="positions.length===0" class="text-center py-10 text-slate-600 text-sm">No open positions</div>
+            </div>
+        </div>
+
+        <!-- AI Decision Log -->
+        <div class="col-span-12 card p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-brain text-blue-400 text-sm"></i>
+                    <span class="font-semibold">AI Decision Log</span>
+                </div>
+                <button @click="loadDecisions()" class="btn btn-ghost text-xs py-1.5 px-3">
+                    <i class="fas fa-rotate text-xs" :class="decisionsLoading?'fa-spin':''"></i>
+                    Refresh
+                </button>
+            </div>
+            <div class="decision-scroll space-y-2">
+                <template x-for="d in decisions" :key="d.id">
+                    <div class="flex gap-3 rounded-xl p-3 stat-mini-card">
+                        <div class="flex-shrink-0 pt-0.5">
+                            <span class="badge"
+                                  :class="d.action==='BUY'?'badge-green':d.action==='SELL'?'badge-red':d.action==='HOLD'?'badge-gray':'badge-orange'"
+                                  x-text="d.action"></span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs text-slate-400 line-clamp-2 leading-relaxed"
+                                 x-text="d.response||'No response recorded'"></div>
+                            <div class="text-xs text-slate-700 mt-1"
+                                 x-text="new Date(d.timestamp).toLocaleString()"></div>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="decisions.length===0" class="text-center py-12 text-slate-600 text-sm">
+                    No decisions yet — start the bot to begin.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     ANALYTICS HUB
+════════════════════════════════ -->
+<div x-show="page==='analytics'" x-cloak x-init="$watch('page', v => { if(v==='analytics') loadAnalytics() })">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-white">Analytics Hub</h2>
+            <span class="badge badge-blue text-[10px] uppercase tracking-widest">Live Data</span>
+        </div>
+        <button @click="loadAnalytics()" class="btn btn-ghost" :disabled="analyticsLoading">
+            <i class="fas fa-rotate text-xs" :class="analyticsLoading?'fa-spin':''"></i>
+            Refresh
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div x-show="analyticsLoading && !analyticsData" class="grid grid-cols-4 gap-4 mb-6">
+        <template x-for="i in 4" :key="i">
+            <div class="card p-6 h-28 skeleton-pulse"></div>
+        </template>
+    </div>
+
+    <template x-if="analyticsData">
+    <div>
+
+    <!-- Row 1: Hero Metrics -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total Market Cap -->
+        <div class="card p-5 metric-glass glow-blue count-up">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/10">
+                    <i class="fas fa-globe text-blue-400 text-xs"></i>
+                </div>
+                <div class="section-label mb-0">Total Market Cap</div>
+            </div>
+            <div class="stat-val text-white" x-text="'$'+ fmtBig(analyticsData.global_metrics?.total_market_cap)"></div>
+            <div class="text-xs mt-2 flex items-center gap-1"
+                 :class="(analyticsData.global_metrics?.total_market_cap_yesterday_pct_change||0)>=0?'text-emerald-400':'text-red-400'">
+                <i class="fas text-[8px]" :class="(analyticsData.global_metrics?.total_market_cap_yesterday_pct_change||0)>=0?'fa-caret-up':'fa-caret-down'"></i>
+                <span x-text="((analyticsData.global_metrics?.total_market_cap_yesterday_pct_change||0)>=0?'+':'') + (analyticsData.global_metrics?.total_market_cap_yesterday_pct_change||0).toFixed(2) + '%'"></span>
+                <span class="text-slate-600 ml-1">24h</span>
+            </div>
+        </div>
+
+        <!-- 24h Volume -->
+        <div class="card p-5 metric-glass glow-green count-up" style="animation-delay:.1s">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/10">
+                    <i class="fas fa-chart-bar text-emerald-400 text-xs"></i>
+                </div>
+                <div class="section-label mb-0">24h Volume</div>
+            </div>
+            <div class="stat-val text-white" x-text="'$'+ fmtBig(analyticsData.global_metrics?.total_volume_24h)"></div>
+            <div class="text-xs text-slate-500 mt-2" x-text="(analyticsData.binance_stats?.total_pairs||0)+' Binance pairs tracked'"></div>
+        </div>
+
+        <!-- BTC Dominance -->
+        <div class="card p-5 metric-glass count-up" style="animation-delay:.2s">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-orange-500/10">
+                    <i class="fas fa-bitcoin-sign text-orange-400 text-xs"></i>
+                </div>
+                <div class="section-label mb-0">BTC Dominance</div>
+            </div>
+            <div class="stat-val text-orange-400" x-text="(analyticsData.global_metrics?.btc_dominance||0).toFixed(1)+'%'"></div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-orange-500 h-full rounded-full bar-grow" :style="'--bar-w:'+((analyticsData.global_metrics?.btc_dominance||0))+'%'"></div>
+            </div>
+        </div>
+
+        <!-- ETH Dominance -->
+        <div class="card p-5 metric-glass count-up" style="animation-delay:.3s">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-500/10">
+                    <i class="fas fa-diamond text-violet-400 text-xs"></i>
+                </div>
+                <div class="section-label mb-0">ETH Dominance</div>
+            </div>
+            <div class="stat-val text-violet-400" x-text="(analyticsData.global_metrics?.eth_dominance||0).toFixed(1)+'%'"></div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-violet-500 h-full rounded-full bar-grow" :style="'--bar-w:'+((analyticsData.global_metrics?.eth_dominance||0))+'%'"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Fear & Greed Gauge + Market Pulse -->
+    <div class="grid grid-cols-12 gap-4 mb-6">
+        <!-- Fear & Greed Gauge -->
+        <div class="col-span-12 lg:col-span-4 card p-6 metric-glass flex flex-col items-center">
+            <div class="section-label mb-4">Fear & Greed Index</div>
+            <div class="relative w-40 h-40 mb-4 float-anim">
+                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#1a2640" stroke-width="6"/>
+                    <circle cx="50" cy="50" r="45" fill="none"
+                            :stroke="fngColor(analyticsData.fear_greed?.value)"
+                            stroke-width="6" stroke-linecap="round"
+                            stroke-dasharray="283"
+                            :stroke-dashoffset="283 - (283 * (analyticsData.fear_greed?.value || 0) / 100)"
+                            class="gauge-ring"
+                            style="--gauge-offset:0"/>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <span class="text-4xl font-black" :class="fngTextClass(analyticsData.fear_greed?.value)" x-text="analyticsData.fear_greed?.value || '--'"></span>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400" x-text="analyticsData.fear_greed?.value_classification || 'N/A'"></span>
+                </div>
+            </div>
+            <div class="w-full flex justify-between text-[9px] uppercase font-bold tracking-widest text-slate-600">
+                <span>Extreme Fear</span><span>Extreme Greed</span>
+            </div>
+            <div class="w-full h-2 rounded-full mt-1 overflow-hidden" style="background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e)"></div>
+        </div>
+
+        <!-- Market Pulse: Green vs Red -->
+        <div class="col-span-12 lg:col-span-4 card p-6 metric-glass">
+            <div class="section-label mb-4">Market Pulse (Binance)</div>
+            <div class="flex items-center justify-center gap-6 mb-4">
+                <div class="text-center">
+                    <div class="text-3xl font-black text-emerald-400" x-text="analyticsData.binance_stats?.green_count||0"></div>
+                    <div class="text-[10px] uppercase font-bold tracking-widest text-slate-500">Gainers</div>
+                </div>
+                <div class="text-3xl text-slate-700 font-thin">|</div>
+                <div class="text-center">
+                    <div class="text-3xl font-black text-red-400" x-text="analyticsData.binance_stats?.red_count||0"></div>
+                    <div class="text-[10px] uppercase font-bold tracking-widest text-slate-500">Losers</div>
+                </div>
+            </div>
+            <!-- Bar chart -->
+            <div class="relative h-6 rounded-lg overflow-hidden bg-slate-800 mb-3">
+                <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-l-lg transition-all duration-1000"
+                     :style="'width:'+(analyticsData.binance_stats?.green_count / Math.max((analyticsData.binance_stats?.green_count||0)+(analyticsData.binance_stats?.red_count||0),1)*100).toFixed(0)+'%'"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white/80 uppercase tracking-widest"
+                     x-text="((analyticsData.binance_stats?.green_count / Math.max((analyticsData.binance_stats?.green_count||0)+(analyticsData.binance_stats?.red_count||0),1)*100)||0).toFixed(0)+'% Green'"></div>
+            </div>
+            <div class="flex justify-between text-xs">
+                <span class="text-slate-500">Avg Change: <span class="font-mono" :class="(analyticsData.binance_stats?.avg_change||0)>=0?'text-emerald-400':'text-red-400'" x-text="((analyticsData.binance_stats?.avg_change||0)>=0?'+':'')+(analyticsData.binance_stats?.avg_change||0)+'%'"></span></span>
+                <span class="text-slate-500">Vol: <span class="font-mono text-slate-300" x-text="'$'+fmtBig(analyticsData.binance_stats?.total_volume)"></span></span>
+            </div>
+        </div>
+
+        <!-- Trending Coins -->
+        <div class="col-span-12 lg:col-span-4 card p-6 metric-glass">
+            <div class="section-label mb-4">🔥 Trending (CMC)</div>
+            <div class="space-y-2 max-h-[240px] overflow-y-auto">
+                <template x-for="(t, idx) in (analyticsData.trending||[])" :key="idx">
+                    <div class="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer" @click="selectCoin(t.symbol+'USDT');page='market'">
+                        <span class="text-[10px] font-black text-slate-600 w-5" x-text="'#'+t.rank"></span>
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black bg-gradient-to-br from-[#1a2640] to-[#243352]" x-text="(t.symbol||'').slice(0,2)"></div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-bold text-slate-200 truncate" x-text="t.name"></div>
+                            <div class="text-[10px] text-slate-500" x-text="t.symbol"></div>
+                        </div>
+                        <div class="text-xs font-mono" :class="(t.change_24h||0)>=0?'text-emerald-400':'text-red-400'" x-text="((t.change_24h||0)>=0?'+':'')+(t.change_24h||0).toFixed(2)+'%'"></div>
+                    </div>
+                </template>
+                <div x-show="(analyticsData.trending||[]).length===0" class="text-center py-6 text-slate-600 text-xs italic">No trending data (add CMC API key)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Top Gainers / Top Losers / Volume Leaders -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <!-- Top Gainers -->
+        <div class="card p-5 metric-glass">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-arrow-trend-up text-emerald-400 text-sm"></i>
+                <span class="section-label mb-0">Top Gainers</span>
+            </div>
+            <div class="space-y-1.5">
+                <template x-for="(g, idx) in (analyticsData.top_gainers||[]).slice(0,8)" :key="idx">
+                    <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" @click="selectCoin(g.symbol);page='market'">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-[10px] w-4 font-black text-slate-600" x-text="idx+1"></span>
+                            <span class="text-xs font-bold text-slate-200 truncate" x-text="g.symbol.replace('USDT','')"></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-mono text-slate-400" x-text="'$'+parseFloat(g.price).toFixed(g.price<1?4:2)"></span>
+                            <span class="badge badge-green text-[10px]" x-text="'+'+parseFloat(g.change).toFixed(1)+'%'"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="(analyticsData.top_gainers||[]).length===0" class="text-center py-4 text-slate-600 text-xs">No data</div>
+            </div>
+        </div>
+
+        <!-- Top Losers -->
+        <div class="card p-5 metric-glass">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-arrow-trend-down text-red-400 text-sm"></i>
+                <span class="section-label mb-0">Top Losers</span>
+            </div>
+            <div class="space-y-1.5">
+                <template x-for="(l, idx) in (analyticsData.top_losers||[]).slice(0,8)" :key="idx">
+                    <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" @click="selectCoin(l.symbol);page='market'">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-[10px] w-4 font-black text-slate-600" x-text="idx+1"></span>
+                            <span class="text-xs font-bold text-slate-200 truncate" x-text="l.symbol.replace('USDT','')"></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-mono text-slate-400" x-text="'$'+parseFloat(l.price).toFixed(l.price<1?4:2)"></span>
+                            <span class="badge badge-red text-[10px]" x-text="parseFloat(l.change).toFixed(1)+'%'"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="(analyticsData.top_losers||[]).length===0" class="text-center py-4 text-slate-600 text-xs">No data</div>
+            </div>
+        </div>
+
+        <!-- Volume Leaders -->
+        <div class="card p-5 metric-glass">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fas fa-fire-flame-curved text-yellow-400 text-sm"></i>
+                <span class="section-label mb-0">Volume Leaders</span>
+            </div>
+            <div class="space-y-1.5">
+                <template x-for="(v, idx) in (analyticsData.volume_leaders||[]).slice(0,8)" :key="idx">
+                    <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer" @click="selectCoin(v.symbol);page='market'">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-[10px] w-4 font-black text-slate-600" x-text="idx+1"></span>
+                            <span class="text-xs font-bold text-slate-200 truncate" x-text="v.symbol.replace('USDT','')"></span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-mono text-slate-400" x-text="'$'+fmtBig(v.volume)"></span>
+                            <span class="badge text-[10px]" :class="parseFloat(v.change)>=0?'badge-green':'badge-red'" x-text="(parseFloat(v.change)>=0?'+':'')+parseFloat(v.change).toFixed(1)+'%'"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="(analyticsData.volume_leaders||[]).length===0" class="text-center py-4 text-slate-600 text-xs">No data</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4: CMC Top Cryptos Heatmap -->
+    <div class="card p-6 metric-glass mb-6">
+        <div class="flex items-center gap-2 mb-5">
+            <i class="fas fa-th text-blue-400 text-sm"></i>
+            <span class="section-label mb-0">Market Heatmap (CMC Top 25)</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <template x-for="(c, idx) in (analyticsData.top_cryptos||[])" :key="idx">
+                <div class="heatmap-cell p-3 flex flex-col items-center justify-center cursor-pointer relative"
+                     :class="(c.change_24h||0)>=0 ? 'bg-emerald-900/40 border border-emerald-500/20' : 'bg-red-900/40 border border-red-500/20'"
+                     :style="'min-width:'+ Math.max(60, Math.min(120, (c.market_cap_dominance||0)*8)) +'px;'"
+                     @click="selectCoin(c.symbol+'USDT');page='market'">
+                    <div class="text-xs font-black text-white" x-text="c.symbol"></div>
+                    <div class="text-[10px] font-mono mt-0.5" :class="(c.change_24h||0)>=0?'text-emerald-400':'text-red-400'" x-text="((c.change_24h||0)>=0?'+':'')+(c.change_24h||0).toFixed(1)+'%'"></div>
+                    <div class="text-[8px] text-slate-500 mt-0.5" x-text="'$'+fmtBig(c.market_cap)"></div>
+                </div>
+            </template>
+            <div x-show="(analyticsData.top_cryptos||[]).length===0" class="text-center py-8 w-full text-slate-600 text-xs italic">Add CMC API key in Settings to see heatmap data</div>
+        </div>
+    </div>
+
+    <!-- Row 5: Extra Metrics -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4 metric-glass text-center">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-2">Active Cryptos</div>
+            <div class="text-xl font-black text-white" x-text="(analyticsData.global_metrics?.active_cryptocurrencies||0).toLocaleString()"></div>
+        </div>
+        <div class="card p-4 metric-glass text-center">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-2">Active Exchanges</div>
+            <div class="text-xl font-black text-white" x-text="(analyticsData.global_metrics?.active_exchanges||0).toLocaleString()"></div>
+        </div>
+        <div class="card p-4 metric-glass text-center">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-2">DeFi Market Cap</div>
+            <div class="text-xl font-black text-purple-400" x-text="'$'+fmtBig(analyticsData.global_metrics?.defi_market_cap)"></div>
+        </div>
+        <div class="card p-4 metric-glass text-center">
+            <div class="text-[10px] uppercase font-bold tracking-widest text-slate-500 mb-2">Stablecoin Vol 24h</div>
+            <div class="text-xl font-black text-cyan-400" x-text="'$'+fmtBig(analyticsData.global_metrics?.stablecoin_volume_24h)"></div>
+        </div>
+    </div>
+
+    </div>
+    </template>
+    <!-- ── Performance & Scanner Section ── -->
+    <div class="grid grid-cols-12 gap-6 mt-6 border-t border-slate-800 pt-8">
+        <!-- PnL Performance Chart -->
+        <div class="col-span-12 lg:col-span-8 card p-6">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex flex-col gap-1">
+                    <h2 class="text-xl font-black uppercase tracking-tight text-white">Equity Performance</h2>
+                    <span class="text-xs text-slate-500 font-bold uppercase tracking-widest">Cumulative Realized PnL (USDT)</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Total Profit</div>
+                        <div class="text-lg font-black text-emerald-400" x-text="'$'+(pnlSummary?.total_realized_pnl||0).toFixed(2)"></div>
+                    </div>
+                    <div class="h-8 w-px bg-slate-800"></div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Win Rate</div>
+                        <div class="text-lg font-black text-blue-400" x-text="(pnlSummary?.win_rate||0)+'%'"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </div>
+        <!-- Stats -->
+        <div class="col-span-12 lg:col-span-4 space-y-4">
+            <div class="card p-5 bg-gradient-to-br from-[#0d1426] to-[#080c18]">
+                <div class="section-label mb-4">Trade Statistics</div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Total Trades</div>
+                        <div class="text-xl font-black text-white" x-text="pnlSummary?.trade_count||0"></div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-900/50 border border-slate-800">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Avg Profit</div>
+                        <div class="text-xl font-black text-emerald-400" x-text="'$'+((pnlSummary?.total_realized_pnl||0)/(pnlSummary?.trade_count||1)).toFixed(2)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     HISTORY
+════════════════════════════════ -->
+<div x-show="page==='history'" x-cloak>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-black uppercase tracking-tight text-white"><i class="fas fa-clock-rotate-left mr-2 text-blue-500"></i>Trade History</h2>
+        <div class="flex items-center gap-2">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input type="text" x-model="tradeFilter" placeholder="Filter symbol…" 
+                       @keyup.enter="tradePage=1; loadTrades()" class="input pl-8 w-48 text-sm">
+            </div>
+            <button @click="tradePage=1; loadTrades()" class="btn btn-primary px-4 py-2">
+                 Search
+            </button>
+            <button @click="loadTrades()" class="btn btn-ghost px-3">
+                 <i class="fas fa-rotate" :class="tradesLoading?'fa-spin':''"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-slate-800/50 text-slate-400 font-medium border-b border-slate-700">
+                    <tr>
+                        <th class="py-3 px-4">Time</th>
+                        <th class="py-3 px-4">Symbol</th>
+                        <th class="py-3 px-4">Side</th>
+                        <th class="py-3 px-4 text-right">Price</th>
+                        <th class="py-3 px-4 text-right">Quantity</th>
+                        <th class="py-3 px-4 text-left">Reason / Note</th>
+                        <th class="py-3 px-4 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/80">
+                    <tr x-show="tradesLoading && trades.length===0" class="hover:bg-transparent">
+                        <td colspan="7" class="py-8 text-center text-slate-500">
+                            <i class="fas fa-circle-notch fa-spin text-xl mb-2 block"></i> Loading history...
+                        </td>
+                    </tr>
+                    <tr x-show="!tradesLoading && trades.length===0" class="hover:bg-transparent">
+                        <td colspan="7" class="py-12 text-center text-slate-500">
+                            <i class="fas fa-ghost text-2xl mb-2 opacity-50 block"></i>
+                            No trading history found.
+                        </td>
+                    </tr>
+                    <template x-for="t in trades" :key="t.id">
+                        <tr class="hover:bg-white/5 transition-colors cursor-default">
+                            <td class="py-3 px-4 text-slate-400" x-text="new Date(t.created_at).toLocaleString()"></td>
+                            <td class="py-3 px-4 font-bold text-white" x-text="t.symbol"></td>
+                            <td class="py-3 px-4">
+                                <span class="badge" 
+                                      :class="(t.side||'').toUpperCase()==='BUY'?'badge-green':'badge-red'" 
+                                      x-text="(t.side||'').toUpperCase()"></span>
+                            </td>
+                            <td class="py-3 px-4 text-right font-mono text-slate-300" x-text="'$'+fmtDec(t.price, 4)"></td>
+                            <td class="py-3 px-4 text-right font-mono" x-text="fmtDec(t.quantity, 6)"></td>
+                            <td class="py-3 px-4 text-slate-400 text-xs truncate max-w-[200px]" :title="t.ai_reason" x-text="t.ai_reason||'-'"></td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="badge" 
+                                      :class="t.status==='completed'?'badge-green':(t.status==='paper'?'badge-blue':'badge-orange')" 
+                                      x-text="(t.status||'').toUpperCase()"></span>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="flex items-center justify-between p-4 border-t border-slate-700 bg-slate-800/30" x-show="trades.length > 0 || tradePage > 1">
+            <button @click="if(tradePage>1){tradePage--; loadTrades();}" 
+                    class="btn btn-ghost px-3 py-1 text-xs" :disabled="tradePage===1" :class="tradePage===1?'opacity-50 cursor-not-allowed':''">
+                ← Previous
+            </button>
+            <span class="text-xs text-slate-400 font-medium">Page <span x-text="tradePage"></span></span>
+            <button @click="tradePage++; loadTrades();" 
+                    class="btn btn-ghost px-3 py-1 text-xs" :disabled="trades.length < tradePageSize" :class="trades.length < tradePageSize?'opacity-50 cursor-not-allowed':''">
+                Next →
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- ════════════════════════════════
+     BACKTEST HUB
+════════════════════════════════ -->
+<div x-show="page==='backtest'" x-cloak>
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-black uppercase tracking-tight text-white">Backtest Hub</h2>
+            <p class="text-slate-400 text-sm mt-1">Simulate strategies against historical data and RAG rules.</p>
+        </div>
+        <button @click="runBacktest()" :disabled="btLoading"
+                class="btn btn-primary py-3 px-8 rounded-xl shadow-lg shadow-indigo-500/20 disabled:opacity-50">
+            <template x-if="!btLoading">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-play text-xs"></i>
+                    <span>Run Simulation</span>
+                </div>
+            </template>
+            <template x-if="btLoading">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span>Processing...</span>
+                </div>
+            </template>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+        <!-- Controls -->
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+            <div class="card p-6">
+                <div class="section-label mb-4">Simulation Parameters</div>
+                <div class="space-y-4">
+                    <div>
+                        <div class="section-label text-[10px]">Symbols (comma separated)</div>
+                        <input type="text" x-model="btSymbols" class="input font-mono" placeholder="BTCUSDT, ETHUSDT">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="section-label text-[10px]">Lookback (Days)</div>
+                            <input type="number" x-model="btDays" class="input">
+                        </div>
+                        <div>
+                            <div class="section-label text-[10px]">Interval</div>
+                            <select x-model="btInterval" class="input">
+                                <option value="1h">1 Hour</option>
+                                <option value="4h">4 Hour</option>
+                                <option value="1d">1 Day</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="section-label text-[10px]">Starting Capital (USDT)</div>
+                        <input type="number" x-model="btCapital" class="input font-mono">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Table (shown after result) -->
+            <template x-if="btResult">
+                <div class="card p-6 bg-gradient-to-br from-indigo-900/20 to-slate-900/40 border-indigo-500/20">
+                    <div class="section-label mb-4">Performance Summary</div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                            <span class="text-xs text-slate-500 uppercase font-bold">Total Return</span>
+                            <span class="text-lg font-black" :class="btResult.total_return_pct >= 0 ? 'text-emerald-400' : 'text-red-400'"
+                                  x-text="(btResult.total_return_pct >= 0 ? '+' : '') + btResult.total_return_pct.toFixed(2) + '%'"></span>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                            <span class="text-xs text-slate-500 uppercase font-bold">Net Profit</span>
+                            <span class="text-lg font-black text-white" x-text="'$' + (btResult.final_capital - btResult.initial_capital).toFixed(2)"></span>
+                        </div>
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                            <span class="text-xs text-slate-500 uppercase font-bold">Win Rate</span>
+                            <span class="text-lg font-black text-blue-400" x-text="btResult.win_rate.toFixed(1) + '%'"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-500 uppercase font-bold">Trades Executed</span>
+                            <span class="text-lg font-black text-slate-300" x-text="btResult.trade_count"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Result Chart -->
+        <div class="col-span-12 lg:col-span-8 card p-6 min-h-[400px] flex flex-col">
+            <div class="section-label mb-4">Equity Curve</div>
+            <div x-show="!btResult && !btLoading" class="flex-1 flex flex-col items-center justify-center text-slate-700">
+                <i class="fas fa-chart-line text-6xl mb-4 opacity-20"></i>
+                <p class="text-sm italic">Configure parameters and run simulation to see results.</p>
+            </div>
+            <div x-show="btLoading" class="flex-1 flex flex-col items-center justify-center">
+                <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                <p class="mt-4 text-xs text-slate-500 font-bold uppercase tracking-widest animate-pulse">Analyzing Historical Data...</p>
+            </div>
+            <div x-show="btResult" class="flex-1 relative">
+                <canvas id="btChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     AI PORTFOLIO HUB
+════════════════════════════════ -->
+<div x-show="page === 'portfolio'" x-cloak>
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex flex-col gap-2">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-white">AI Portfolio Strategist</h2>
+            <div class="flex bg-slate-800/50 p-1 rounded-lg self-start">
+                <button @click="portfolioStrategy='macro'" 
+                        :class="portfolioStrategy==='macro' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+                        class="px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all">
+                    Macro (Long-Term)
+                </button>
+                <button @click="portfolioStrategy='swing'" 
+                        :class="portfolioStrategy==='swing' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+                        class="px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all">
+                    Swing (Medium-Term)
+                </button>
+                <button @click="portfolioStrategy='hustle'" 
+                        :class="portfolioStrategy==='hustle' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'"
+                        class="px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all">
+                    Hustle Mode (Daily)
+                </button>
+            </div>
+        </div>
+        <button @click="runScanner()" :disabled="scanningMarket"
+                class="btn btn-primary py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20 disabled:opacity-50">
+            <template x-if="!scanningMarket">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-tower-broadcast animate-pulse text-xs"></i>
+                    <span>Scan Market Now</span>
+                </div>
+            </template>
+            <template x-if="scanningMarket">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span>AI Analyzing Market...</span>
+                </div>
+            </template>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+        <!-- AI Allocation Chart -->
+        <div class="col-span-12 lg:col-span-4 card p-6 bg-gradient-to-b from-[#0d1426] to-[#080c18]">
+            <div class="section-label mb-4">Total Budget Allocation</div>
+            <div class="relative h-48 w-48 mx-auto mb-6 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-8 border-slate-800"></div>
+                <!-- Dynamic Pie Logic could go here, for now a nice Icon -->
+                <i class="fas fa-chart-pie text-4xl text-blue-500"></i>
+            </div>
+            <div class="space-y-4">
+                <template x-for="r in aiRecommendations" :key="r.id">
+                    <div>
+                        <div class="flex justify-between text-xs font-bold mb-1.5 uppercase tracking-wider">
+                            <span class="text-slate-300" x-text="r.symbol"></span>
+                            <span class="text-blue-400" x-text="'$'+r.allocation_usd"></span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" 
+                                 :style="`width: ${(r.allocation_usd / stratMaxTrade * 20).toFixed(0)}%`"></div>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="aiRecommendations.length===0" class="text-center py-6 text-slate-600 text-xs italic">
+                    Run a scan to see AI suggestions.
+                </div>
+            </div>
+
+            <!-- New Deployment Panel -->
+            <div x-show="aiRecommendations.length > 0" class="mt-8 pt-6 border-t border-slate-800">
+                <div class="section-label mb-4">Deployment Control</div>
+                <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Budget to Deploy</span>
+                        <span class="text-lg font-black text-blue-400" x-text="portfolioBudget + '%'"></span>
+                    </div>
+                    <input type="range" x-model="portfolioBudget" min="5" max="100" step="5"
+                           class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-6">
+                    
+                    <button @click="deployPortfolio()" :disabled="deployingPortfolio"
+                            class="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all text-sm
+                                   flex items-center justify-center gap-2"
+                            :class="deployingPortfolio ? 'bg-slate-800 text-slate-500' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/20 hover:scale-[1.02]'">
+                        <template x-if="!deployingPortfolio">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-rocket"></i>
+                                <span>Deploy Portfolio</span>
+                            </div>
+                        </template>
+                        <template x-if="deployingPortfolio">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-circle-notch fa-spin"></i>
+                                <span>Executing Batch Orders...</span>
+                            </div>
+                        </template>
+                    </button>
+                    <p class="text-[10px] text-slate-500 text-center mt-3 uppercase tracking-tighter">
+                        Uses <span class="text-slate-300" x-text="portfolioBudget + '%'"></span> of available USDT for MARKET orders
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Recommendations List -->
+        <div class="col-span-12 lg:col-span-8 space-y-4 relative min-h-[400px]">
+            <div class="flex items-center justify-between">
+                <div class="section-label">AI Top Market Picks</div>
+                <div x-show="scanningMarket" x-transition class="flex items-center gap-2">
+                    <div class="flex gap-0.5">
+                        <div class="w-1 h-1 bg-blue-500 rounded-full animate-bounce"></div>
+                        <div class="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                        <div class="w-1 h-1 bg-blue-500 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scanning Overlay Animation -->
+            <div x-show="scanningMarket" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" class="absolute inset-x-0 top-12 bottom-0 z-10 pointer-events-none overflow-hidden rounded-2xl border border-blue-500/20 bg-blue-500/5">
+                <div class="absolute inset-x-0 scan-laser"></div>
+                
+                <div class="flex flex-col items-center justify-center h-full gap-4">
+                    <div class="relative w-20 h-20">
+                        <div class="absolute inset-0 rounded-full border-2 border-blue-500/20 animate-ping"></div>
+                        <div class="absolute inset-2 rounded-full border-2 border-blue-500/40 animate-pulse"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i class="fas fa-brain text-2xl text-blue-500"></i>
+                        </div>
+                    </div>
+                    <div class="text-xs font-black uppercase tracking-widest text-blue-400" 
+                         x-text="aiScannerLogs.length ? aiScannerLogs[aiScannerLogs.length - 1] : 'Booting...'">
+                    </div>
+                    
+                    <div x-show="aiScannerThought" class="mt-4 w-full max-w-2xl text-left bg-slate-900/90 border border-slate-700/50 p-4 rounded-xl shadow-lg relative overflow-hidden backdrop-blur-sm">
+                        <div class="text-[10px] uppercase font-bold text-blue-500 mb-2 border-b border-slate-800 pb-2 flex justify-between">
+                            <span>Raw Neural Stream</span>
+                            <span class="animate-pulse">●</span>
+                        </div>
+                        <div class="text-[10px] leading-relaxed text-slate-300 font-mono whitespace-pre-wrap max-h-[120px] overflow-y-auto" x-text="aiScannerThought + '█'"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skeleton Loader -->
+            <template x-if="scanningMarket">
+                <div class="space-y-4">
+                    <template x-for="i in [1,2,3]" :key="i">
+                        <div class="card p-5 h-[140px] border-l-4 border-l-slate-800 opacity-50 flex flex-col justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl skeleton-pulse"></div>
+                                <div class="flex-1 space-y-2">
+                                    <div class="h-4 w-24 rounded skeleton-pulse"></div>
+                                    <div class="h-3 w-48 rounded skeleton-pulse"></div>
+                                </div>
+                                <div class="w-16 h-8 rounded skeleton-pulse"></div>
+                            </div>
+                            <div class="flex justify-between mt-4 pt-4 border-t border-slate-800/30">
+                                <div class="flex gap-4">
+                                    <div class="h-3 w-16 rounded skeleton-pulse"></div>
+                                    <div class="h-3 w-16 rounded skeleton-pulse"></div>
+                                </div>
+                                <div class="h-6 w-20 rounded skeleton-pulse"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <div x-show="!scanningMarket && aiRecommendations.length === 0" class="flex flex-col items-center justify-center py-20 bg-slate-900/20 rounded-2xl border border-dashed border-slate-800">
+                <i class="fas fa-satellite-dish text-4xl text-slate-700 mb-4"></i>
+                <p class="text-sm text-slate-500">No market opportunities identified yet.</p>
+                <button @click="runScanner()" class="mt-4 text-xs font-bold text-blue-400 hover:text-blue-300">Run Deep Market Scan →</button>
+            </div>
+
+            <div x-show="!scanningMarket" class="space-y-4">
+                <template x-for="r in aiRecommendations" :key="r.id">
+                <div class="card p-5 border-l-4 border-l-blue-500 hover:translate-x-1 transition-transform cursor-pointer">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black icon-blue-bg"
+                                 x-text="r.symbol.slice(0,2)"></div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-black text-lg text-white" x-text="r.symbol"></h3>
+                                    <span class="badge badge-green" x-text="r.sentiment"></span>
+                                </div>
+                                <div class="text-slate-400 text-sm font-medium mt-1" x-text="r.reason"></div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Confidence</div>
+                            <div class="text-2xl font-black text-blue-400" x-text="(r.confidence*100).toFixed(0)+'%'"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-800/50 flex items-center justify-between">
+                        <div class="flex gap-4">
+                            <div class="flex flex-col">
+                                <span class="text-[10px] uppercase font-bold text-slate-600">Entry Target</span>
+                                <span class="text-sm font-mono text-slate-300" x-text="'$'+parseFloat(r.price).toFixed(4)"></span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-[10px] uppercase font-bold text-slate-600">Allocation</span>
+                                <span class="text-sm font-mono text-emerald-400" x-text="'$'+r.allocation_usd"></span>
+                            </div>
+                        </div>
+                        <button @click="quickTrade(r.symbol)" class="btn btn-ghost text-[10px] px-3 py-1 uppercase font-black hover:bg-blue-600 hover:text-white transition-colors">
+                            Deploy Funds
+                        </button>
+                    </div>
+                </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     RAG KNOWLEDGE BASE
+════════════════════════════════ -->
+<div x-show="page==='knowledge'" x-cloak>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-black uppercase tracking-tight text-white">RAG Knowledge Base</h2>
+            <p class="text-slate-400 text-sm mt-1">Institutional memory, market theses, and logic rules for the AI.</p>
+        </div>
+        <button class="btn btn-primary px-4 py-2" @click="ragShowAddModal=true">
+            <i class="fas fa-plus mr-2"></i> Add Document
+        </button>
+    </div>
+
+    <!-- ADD DOCUMENT MODAL -->
+    <div x-show="ragShowAddModal" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="ragShowAddModal=false">
+        <div class="card p-6 w-full max-w-lg mx-4 shadow-2xl border border-blue-500/30">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-bold text-white text-lg"><i class="fas fa-brain text-blue-400 mr-2"></i>Inject Knowledge</h3>
+                <button @click="ragShowAddModal=false" class="text-slate-500 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <div class="section-label">Title</div>
+                    <input type="text" x-model="ragNewTitle" class="input" placeholder="e.g. BTC Bull Thesis Q2 2025">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <div class="section-label">Type</div>
+                        <select x-model="ragNewType" class="input">
+                            <option value="thesis">Thesis</option>
+                            <option value="rule">Rule / Guardrail</option>
+                            <option value="narrative">Market Narrative</option>
+                            <option value="postmortem">Postmortem</option>
+                            <option value="note">General Note</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="section-label">Horizon</div>
+                        <select x-model="ragNewHorizon" class="input">
+                            <option value="long_term">Long-Term (Macro)</option>
+                            <option value="swing">Swing</option>
+                            <option value="hustle">Hustle</option>
+                            <option value="moonshot">Moonshot</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <div class="section-label">Asset <span class="text-slate-600">(optional, e.g. BTC)</span></div>
+                    <input type="text" x-model="ragNewAsset" class="input font-mono uppercase" placeholder="BTC  ETH  SOL …">
+                </div>
+                <div>
+                    <div class="section-label">Content</div>
+                    <textarea x-model="ragNewContent" rows="5" class="input resize-none" placeholder="Paste your thesis, rule, or narrative here…"></textarea>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="ragAutoApprove" x-model="ragAutoApprove" class="w-4 h-4 accent-emerald-500">
+                    <label for="ragAutoApprove" class="text-xs text-slate-400">Auto-approve (skip review queue — use with caution)</label>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+                <button @click="submitRagDocument()" :disabled="ragSubmitting" class="btn btn-primary flex-1">
+                    <i class="fas fa-upload mr-2" :class="ragSubmitting?'fa-spin fa-spinner':''"></i>
+                    <span x-text="ragSubmitting?'Ingesting…':'Ingest Document'"></span>
+                </button>
+                <button @click="ragShowAddModal=false" class="btn btn-ghost">Cancel</button>
+            </div>
+            <div x-show="ragAddResult" class="mt-3 text-xs rounded-lg p-3" :class="ragAddOk?'bg-emerald-900/40 text-emerald-400 border border-emerald-700':'bg-red-900/40 text-red-400 border border-red-700'" x-text="ragAddResult"></div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="card p-4 border-l-4 border-l-blue-500">
+            <div class="text-xs font-bold uppercase text-slate-500">Total Documents</div>
+            <div class="text-2xl font-black text-white mt-1" x-text="ragDocuments.length"></div>
+            <div class="text-xs text-slate-500 mt-1">In knowledge base</div>
+        </div>
+        <div class="card p-4 border-l-4 border-l-orange-500">
+            <div class="text-xs font-bold uppercase text-slate-500">Pending Review</div>
+            <div class="text-2xl font-black text-orange-400 mt-1" x-text="ragDocuments.filter(d=>d.status==='pending_review').length"></div>
+            <div class="text-xs text-slate-500 mt-1">Awaiting approval</div>
+        </div>
+        <div class="card p-4 border-l-4 border-l-emerald-500">
+            <div class="text-xs font-bold uppercase text-slate-500">Approved & Active</div>
+            <div class="text-2xl font-black text-emerald-400 mt-1" x-text="ragDocuments.filter(d=>d.status==='approved').length"></div>
+            <div class="text-xs text-slate-500 mt-1">Grounding AI decisions</div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout: Queue + Search/HowItWorks -->
+    <div class="grid grid-cols-12 gap-4">
+
+        <!-- Document Queue -->
+        <div class="col-span-12 lg:col-span-7 card p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-sm font-bold uppercase text-slate-500">Document Queue</h3>
+                    <button @click="learnFromHistory()" 
+                            :disabled="ragSubmitting"
+                            class="text-[10px] bg-indigo-900/40 hover:bg-indigo-800/60 text-indigo-300 px-2 py-1 rounded-md border border-indigo-500/30 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                        <i class="fas" :class="ragSubmitting?'fa-spin fa-circle-notch':'fa-graduation-cap'"></i>
+                        Learn from history
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <button @click="ragStatusFilter=''; loadRagDocuments()" :class="ragStatusFilter===''?'bg-blue-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">All</button>
+                    <button @click="ragStatusFilter='pending_review'; loadRagDocuments()" :class="ragStatusFilter==='pending_review'?'bg-orange-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Pending</button>
+                    <button @click="ragStatusFilter='approved'; loadRagDocuments()" :class="ragStatusFilter==='approved'?'bg-emerald-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Approved</button>
+                    <button @click="ragStatusFilter='rejected'; loadRagDocuments()" :class="ragStatusFilter==='rejected'?'bg-red-700 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Rejected</button>
+                </div>
+            </div>
+
+            <div x-show="ragLoading" class="text-center py-8 text-slate-500"><i class="fas fa-spinner fa-spin mr-2"></i> Loading...</div>
+            <div x-show="!ragLoading && ragDocuments.length === 0" class="text-center py-10 text-slate-600">
+                <i class="fas fa-brain text-4xl mb-3 block"></i>
+                No documents found. Add your first knowledge document above.
+            </div>
+            <div class="space-y-3 max-h-[560px] overflow-y-auto pr-1" x-show="!ragLoading && ragDocuments.length > 0">
+                <template x-for="doc in ragDocuments" :key="doc.id">
+                    <div class="bg-[#080c18] border border-[#1a2640] rounded-xl p-4 hover:border-blue-500/30 transition-colors">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                                    <span class="text-white font-bold text-sm truncate" x-text="doc.title"></span>
+                                    <span class="badge" :class="doc.status==='approved'?'badge-green':doc.status==='rejected'?'badge-red':'badge-orange'" x-text="doc.status.replace('_',' ')"></span>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mb-2">
+                                    <span class="badge badge-gray text-[10px]" x-text="doc.horizon"></span>
+                                    <span class="badge badge-blue text-[10px]" x-text="doc.doc_type"></span>
+                                    <template x-if="doc.asset"><span class="badge badge-orange text-[10px]" x-text="doc.asset"></span></template>
+                                    <span class="badge badge-gray text-[10px]"><i class="fas fa-cubes mr-1"></i><span x-text="(doc.chunk_count||0)+' chunks'"></span></span>
+                                </div>
+                                <p class="text-slate-500 text-xs line-clamp-2" x-text="doc.content"></p>
+                                <div class="text-[10px] text-slate-700 mt-1.5" x-text="new Date(doc.created_at).toLocaleString()"></div>
+                            </div>
+                            <div class="flex flex-col gap-1.5 shrink-0">
+                                <template x-if="doc.status === 'pending_review'">
+                                    <div class="flex flex-col gap-1">
+                                        <button @click="updateRagStatus(doc.id, 'approved')" class="btn btn-success text-xs py-1 px-2"><i class="fas fa-check mr-1"></i>Approve</button>
+                                        <button @click="updateRagStatus(doc.id, 'rejected')" class="btn btn-danger text-xs py-1 px-2"><i class="fas fa-times mr-1"></i>Reject</button>
+                                    </div>
+                                </template>
+                                <template x-if="doc.status === 'approved'">
+                                    <button @click="updateRagStatus(doc.id, 'rejected')" class="btn btn-ghost text-xs py-1 px-2 hover:text-red-400"><i class="fas fa-ban mr-1"></i>Revoke</button>
+                                </template>
+                                <template x-if="doc.status === 'rejected'">
+                                    <button @click="updateRagStatus(doc.id, 'approved')" class="btn btn-ghost text-xs py-1 px-2 hover:text-emerald-400"><i class="fas fa-redo mr-1"></i>Re-approve</button>
+                                </template>
+                                <button @click="deleteRagDocument(doc.id)" class="btn btn-ghost text-xs py-1 px-2 hover:text-red-400"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Right: Search + How It Works -->
+        <div class="col-span-12 lg:col-span-5 flex flex-col gap-4">
+
+            <!-- Live Semantic Search -->
+            <div class="card p-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fas fa-magnifying-glass-chart text-blue-400 text-sm"></i>
+                    <h3 class="text-sm font-bold uppercase text-slate-500">Live Memory Search</h3>
+                </div>
+                <p class="text-xs text-slate-500 mb-3">Test exactly what context the AI would receive for any query.</p>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" x-model="ragSearchQuery" @keyup.enter="searchRag()" class="input flex-1 text-sm" placeholder="e.g. BTC macro cycle...">
+                    <button @click="searchRag()" :disabled="ragSearching" class="btn btn-ghost text-xs px-3">
+                        <i class="fas" :class="ragSearching?'fa-spinner fa-spin':'fa-search'"></i>
+                    </button>
+                </div>
+                <select x-model="ragSearchHorizon" class="input text-xs mb-3">
+                    <option value="">All horizons</option>
+                    <option value="long_term">Long-Term</option>
+                    <option value="swing">Swing</option>
+                    <option value="hustle">Hustle</option>
+                    <option value="moonshot">Moonshot</option>
+                </select>
+                <div x-show="ragSearchResults.length > 0" class="space-y-2 max-h-56 overflow-y-auto">
+                    <template x-for="(r, i) in ragSearchResults" :key="i">
+                        <div class="bg-[#080c18] border border-[#1a2640] rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-blue-400 text-[10px] font-bold uppercase" x-text="r.source"></span>
+                                <span class="badge badge-gray text-[10px]" x-text="'score: '+(r.score*100).toFixed(1)+'%'"></span>
+                            </div>
+                            <p class="text-slate-400 text-xs line-clamp-3" x-text="r.text"></p>
+                        </div>
+                    </template>
+                </div>
+                <div x-show="!ragSearching && ragSearchQuery && ragSearchResults.length===0" class="text-center py-4 text-slate-600 text-xs">No results — try a different query or approve more documents.</div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="card p-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fas fa-circle-question text-purple-400 text-sm"></i>
+                    <h3 class="text-sm font-bold uppercase text-slate-500">How It Works</h3>
+                </div>
+                <div class="space-y-3 text-xs text-slate-400">
+                    <div class="flex gap-3">
+                        <div class="w-6 h-6 rounded-full bg-blue-900/50 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400 font-bold text-[10px]">1</div>
+                        <div><span class="text-white font-semibold block mb-0.5">Document Ingestion</span>You or an AI agent adds a document. It is split into 500-word chunks and each chunk gets a vector embedding via Ollama (bge-m3).</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="w-6 h-6 rounded-full bg-orange-900/50 border border-orange-500/30 flex items-center justify-center shrink-0 text-orange-400 font-bold text-[10px]">2</div>
+                        <div><span class="text-white font-semibold block mb-0.5">Human Review Gate</span>All documents land as <span class="text-orange-400 font-semibold">Pending</span>. They are invisible to the AI until you Approve. This prevents hallucinations from poisoning context.</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="w-6 h-6 rounded-full bg-emerald-900/50 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400 font-bold text-[10px]">3</div>
+                        <div><span class="text-white font-semibold block mb-0.5">Semantic Retrieval</span>Before each agent run, the bot embeds its query and finds the top-3 semantically similar chunks from <span class="text-emerald-400 font-semibold">approved</span> documents using cosine similarity.</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="w-6 h-6 rounded-full bg-purple-900/50 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-400 font-bold text-[10px]">4</div>
+                        <div><span class="text-white font-semibold block mb-0.5">Context Injection</span>Retrieved chunks are injected into the AI prompt as <em>historical advisory context</em> — explicitly not treated as live facts. The agent defers to real-time market data.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════
+     SETTINGS
+════════════════════════════════ -->
+<div x-show="page==='settings'" x-cloak>
+    <div class="grid grid-cols-12 gap-4">
+
+        <!-- AI Provider -->
+        <div class="col-span-12 lg:col-span-6 card p-5">
+            <div class="flex items-center gap-2 mb-5">
+                <i class="fas fa-microchip text-blue-400 text-sm"></i>
+                <span class="font-semibold">AI Provider</span>
+            </div>
+
+            <!-- Provider grid -->
+            <div class="mb-4">
+                <div class="section-label">Provider</div>
+                <div class="grid grid-cols-3 gap-2">
+                    <template x-for="p in aiProviders" :key="p.name">
+                        <button @click="selectProvider(p.name)"
+                                class="py-2 px-3 rounded-lg text-xs font-semibold border transition-all text-center"
+                                :class="aiProvider===p.name
+                                    ?'border-blue-500 bg-blue-900/30 text-blue-300'
+                                    :'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'"
+                                x-text="p.display"></button>
+                    </template>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="section-label mb-0">Provider Switches</div>
+                    <button @click="loadProviderCards()" class="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+                        <i class="fas fa-rotate text-xs"></i>
+                        Refresh
+                    </button>
+                </div>
+                <div class="space-y-2">
+                    <template x-for="p in providerCards" :key="p.name">
+                        <div class="rounded-xl border border-slate-800 bg-slate-950/30 p-3">
+                            <div class="flex items-center gap-3">
+                                <button @click="toggleProvider(p)"
+                                        class="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+                                        :class="p.enabled?'bg-emerald-600':'bg-slate-700'">
+                                    <span class="absolute top-1 w-4 h-4 rounded-full bg-white transition-all"
+                                          :class="p.enabled?'left-6':'left-1'"></span>
+                                </button>
+                                <button @click="selectProvider(p.name)" class="text-left flex-1 min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-slate-200" x-text="p.display"></span>
+                                        <span class="badge text-[9px]"
+                                              :class="p.enabled?'badge-green':'badge-gray'"
+                                              x-text="p.enabled?'ON':'OFF'"></span>
+                                        <span class="badge text-[9px]"
+                                              :class="p.configured?'badge-blue':'badge-gray'"
+                                              x-text="p.configured?'CONFIGURED':'NEEDS KEY'"></span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-600 truncate mt-1"
+                                         x-text="p.model || p.base_url || 'No model saved yet'"></div>
+                                </button>
+                                <button @click="testProvider(p.name)"
+                                        :disabled="!!providerTesting[p.name]"
+                                        class="btn btn-ghost px-3 py-2 text-xs disabled:opacity-50">
+                                    <i class="fas" :class="!!providerTesting[p.name]?'fa-spin fa-circle-notch':'fa-plug'"></i>
+                                </button>
+                                <button @click="fetchProviderModels(p.name)"
+                                        :disabled="!!providerModelLoading[p.name]"
+                                        class="btn btn-ghost px-3 py-2 text-xs disabled:opacity-50">
+                                    <i class="fas" :class="!!providerModelLoading[p.name]?'fa-spin fa-circle-notch':'fa-list'"></i>
+                                </button>
+                            </div>
+                            <div x-show="providerResults[p.name]" class="mt-2 text-[10px] leading-relaxed"
+                                 :class="providerResults[p.name] && providerResults[p.name].ok?'text-emerald-300':'text-red-300'"
+                                 x-text="providerResults[p.name] ? providerResults[p.name].msg : ''"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Base URL (Openclaw / Ollama) -->
+            <div x-show="aiProvider==='openclaw'||aiProvider==='ollama'||aiProvider==='opencode'" class="mb-3">
+                <div class="section-label"
+                     x-text="aiProvider==='openclaw'?'Gateway URL':aiProvider==='ollama'?'Ollama Base URL':'OpenCode Base URL'"></div>
+                <input type="text" x-model="aiBaseUrl" class="input font-mono"
+                       :placeholder="aiProvider==='openclaw'?'http://72.60.88.88:46160':aiProvider==='ollama'?'http://localhost:11434':'https://opencode.ai/zen/v1'">
+            </div>
+
+            <!-- API key -->
+            <div x-show="aiProvider!=='openclaw'||(aiProvider==='openclaw'&&showOpenclawKey)" class="mb-2">
+                <div class="section-label">
+                    API Key
+                    <span x-show="aiProvider==='openclaw'" class="text-slate-700 normal-case font-normal">(optional)</span>
+                    <span x-show="aiProvider==='openai'" class="text-slate-700 normal-case font-normal">(required unless OPENAI_API_KEY is set on the server)</span>
+                    <span x-show="aiProvider==='opencode'" class="text-slate-700 normal-case font-normal">(required)</span>
+                </div>
+                <input type="password" x-model="aiApiKey" class="input font-mono" placeholder="sk-…">
+            </div>
+            <div x-show="aiProvider==='openclaw'" class="mb-3">
+                <button @click="showOpenclawKey=!showOpenclawKey"
+                        class="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                        x-text="showOpenclawKey?'− Hide API key':'+ Add API key (optional)'"></button>
+            </div>
+
+            <div x-show="aiProvider==='openai'" class="mb-3 p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fas fa-circle-info text-blue-400 text-[10px]"></i>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">OpenAI Auth</span>
+                </div>
+                <p class="text-[10px] text-slate-500 leading-relaxed mb-2" x-text="openaiAuthNote || 'OpenAI API access uses an API key. Codex or ChatGPT login cannot be reused here.'"></p>
+                <p class="text-[10px] text-slate-500 leading-relaxed">
+                    Create an API key at
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" class="text-blue-400 hover:underline">platform.openai.com/api-keys</a>
+                    or set <code>OPENAI_API_KEY</code> in the server environment.
+                </p>
+                <p x-show="openaiKeyConfigured" class="text-[10px] text-emerald-400 mt-2">
+                    An OpenAI API key is already available from stored credentials or the server environment.
+                </p>
+            </div>
+
+            <div x-show="aiProvider==='codex'" class="mb-3 p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fas fa-shield-halved text-emerald-400 text-[10px]"></i>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Codex CLI Mode</span>
+                </div>
+                <p class="text-[10px] text-slate-500 leading-relaxed" x-text="codexAuthNote || 'Codex CLI uses your local ChatGPT sign-in and runs locally in advisory-only mode.'"></p>
+                <p class="text-[10px] text-slate-500 leading-relaxed mt-2">
+                    Paper Trading stays enabled for this provider. Any live candidate is stored as pending approval instead of being executed automatically.
+                </p>
+                <p class="text-[10px] mt-2" :class="codexAvailable ? 'text-emerald-400' : 'text-red-400'" x-text="codexLoginStatus || 'Codex CLI status unknown'"></p>
+            </div>
+
+            <div x-show="aiProvider==='opencode'" class="mb-3 p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="fas fa-circle-info text-blue-400 text-[10px]"></i>
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">OpenCode API</span>
+                </div>
+                <p class="text-[10px] text-slate-500 leading-relaxed" x-text="opencodeAuthNote || 'OpenCode API uses an API key and defaults to the OpenCode Zen chat-completions compatible base URL.'"></p>
+                <p class="text-[10px] text-slate-500 leading-relaxed mt-2">
+                    Use <code>https://opencode.ai/zen/v1</code> for Zen or switch the base URL if your key belongs to a different OpenCode plan.
+                </p>
+            </div>
+
+            <!-- Model -->
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="section-label mb-0">Model</div>
+                    <button
+                            @click="fetchModels()"
+                            class="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+                        <i class="fas fa-rotate text-xs" :class="modelsLoading?'fa-spin':''"></i>
+                        Fetch models
+                    </button>
+                </div>
+                <div x-show="availableModels.length>0">
+                    <select x-model="aiModel" class="input font-mono">
+                        <template x-for="m in availableModels" :key="m">
+                            <option :value="m" x-text="m"></option>
+                        </template>
+                    </select>
+                </div>
+                <div x-show="availableModels.length===0" class="space-y-2">
+                    <input type="text" x-model="aiModel" class="input font-mono"
+                           :placeholder="aiProvider==='openclaw'?'default':aiProvider==='openai'?'gpt-4o or gpt-5.4-mini':aiProvider==='codex'?'gpt-5-codex or leave blank':aiProvider==='opencode'?'qwen3.5-plus':'model-id (e.g. qwen2.5:7b)'">
+                    
+                    <!-- Ollama Helpers -->
+                    <div x-show="aiProvider==='ollama'" x-transition class="p-3 rounded-xl bg-slate-900/50 border border-slate-700/50">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="fas fa-circle-info text-blue-400 text-[10px]"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Local Setup</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mb-2 leading-relaxed">
+                            Ollama must be running on your machine. Don't have it? 
+                            <a href="https://ollama.com" target="_blank" rel="noopener" class="text-blue-400 hover:underline">Download here</a>.
+                        </p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[9px] text-slate-600 block w-full mb-1">Suggested models:</span>
+                            <button @click="aiModel='qwen2.5:7b'" class="px-2 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:bg-slate-700 transition-colors border border-slate-700">qwen2.5:7b</button>
+                            <button @click="aiModel='llama3.2'" class="px-2 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:bg-slate-700 transition-colors border border-slate-700">llama3.2</button>
+                            <button @click="aiModel='mistral'" class="px-2 py-1 rounded bg-slate-800 text-[10px] text-slate-300 hover:bg-slate-700 transition-colors border border-slate-700">mistral</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button @click="saveAI()" class="btn btn-primary flex-1 py-2.5">Save Config</button>
+                <button @click="testAI()" :disabled="aiTesting" class="btn btn-ghost py-2.5 px-4 disabled:opacity-50">
+                    <i class="fas text-xs" :class="aiTesting?'fa-spin fa-circle-notch':'fa-plug'"></i>
+                    Test
+                </button>
+            </div>
+
+            <div x-show="aiTestResult" class="mt-3 p-3 rounded-xl text-xs leading-relaxed"
+                 :class="aiTestOk
+                    ?'text-emerald-300' :'text-red-300'"
+                 :style="aiTestOk?'background:#052e20;border:1px solid #00d4aa33;':'background:#2d0f0f;border:1px solid #f8717133;'">
+                <i class="fas mr-1" :class="aiTestOk?'fa-circle-check':'fa-circle-xmark'"></i>
+                <span x-text="aiTestResult"></span>
+            </div>
+        </div>
+
+        <!-- Binance -->
+        <div class="col-span-12 lg:col-span-6 card p-5">
+            <div class="flex items-center gap-2 mb-5">
+                <i class="fas fa-key text-yellow-400 text-sm"></i>
+                <span class="font-semibold">Binance API</span>
+                <span class="ml-auto badge"
+                      :class="binanceConfigured?'badge-green':'badge-gray'"
+                      x-text="binanceConfigured?'Connected':'Not connected'"></span>
+            </div>
+            <div class="mb-3">
+                <div class="section-label">API Key</div>
+                <input type="password" x-model="binKey" class="input font-mono" placeholder="Your Binance API key">
+            </div>
+            <div class="mb-5">
+                <div class="section-label">API Secret</div>
+                <input type="password" x-model="binSecret" class="input font-mono" placeholder="Your Binance API secret">
+            </div>
+            <div class="flex gap-2">
+                <button @click="saveBin()" class="btn flex-1 py-2.5 font-bold text-white btn-binance-save">Save Keys</button>
+                <button @click="testBinance()" :disabled="binTesting" class="btn btn-ghost py-2.5 px-4 disabled:opacity-50">
+                    <i class="fas text-xs" :class="binTesting?'fa-spin fa-circle-notch':'fa-plug'"></i>
+                    Test
+                </button>
+            </div>
+            <div x-show="binTestResult" class="mt-3 p-3 rounded-xl text-xs leading-relaxed"
+                 :class="binTestOk?'text-emerald-300':'text-red-300'"
+                 :style="binTestOk?'background:#052e20;border:1px solid #00d4aa33;':'background:#2d0f0f;border:1px solid #f8717133;'">
+                <i class="fas mr-1" :class="binTestOk?'fa-circle-check':'fa-circle-xmark'"></i>
+                <span x-text="binTestResult"></span>
+            </div>
+        </div>
+
+        <!-- CoinMarketCap -->
+        <div class="col-span-12 card p-5">
+            <div class="flex items-center gap-2 mb-5">
+                <i class="fas fa-chart-line text-emerald-400 text-sm"></i>
+                <span class="font-semibold">CoinMarketCap (Global Macro)</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <div class="section-label">Pro API Key</div>
+                    <input type="password" x-model="cmcKey" class="input font-mono" placeholder="Your CMC API key">
+                    <p class="text-[10px] text-slate-600 mt-2">Required for <span class="text-slate-400">Fear & Greed Index</span> and <span class="text-slate-400">BTC Dominance</span> logic.</p>
+                </div>
+                <div class="flex items-end">
+                    <button @click="saveCMC()" class="btn py-2.5 px-6 font-bold text-white bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto">
+                        Save CMC Key
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy -->
+        <div class="col-span-12 card p-5">
+            <div class="flex items-center gap-2 mb-5">
+                <i class="fas fa-sliders text-violet-400 text-sm"></i>
+                <span class="font-semibold">Trading Strategy</span>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+                <!-- Trading mode toggle -->
+                <div>
+                    <div class="section-label">Trading Mode</div>
+                    <div class="flex rounded-xl overflow-hidden toggle-wrapper">
+                        <button @click="stratPaper=true"
+                                class="flex-1 py-2.5 text-xs font-bold transition-all"
+                                :class="stratPaper?'bg-blue-600 text-white':'text-slate-500 hover:text-white'">PAPER</button>
+                        <button @click="confirmLive()"
+                                class="flex-1 py-2.5 text-xs font-bold transition-all"
+                                :class="!stratPaper?'bg-orange-600 text-white':'text-slate-500 hover:text-white'">LIVE</button>
+                    </div>
+                </div>
+                <div>
+                    <div class="section-label">Max Trade (USD)</div>
+                    <input type="number" x-model="stratMaxTrade" class="input">
+                </div>
+                <div>
+                    <div class="section-label">Max Open Trades</div>
+                    <input type="number" x-model="stratMaxOpen" class="input">
+                </div>
+                <div>
+                    <div class="section-label">AI Confidence (0–1)</div>
+                    <input type="number" step="0.05" min="0" max="1" x-model="stratConf" class="input">
+                </div>
+                <div>
+                    <div class="section-label">Stop Loss %</div>
+                    <input type="number" step="0.5" x-model="stratSL" class="input">
+                </div>
+                <div>
+                    <div class="section-label">Take Profit %</div>
+                    <input type="number" step="0.5" x-model="stratTP" class="input">
+                </div>
+                <div>
+                    <div class="section-label">Interval (seconds)</div>
+                    <input type="number" x-model="stratInterval" class="input">
+                </div>
+                <div>
+                    <div class="section-label">Allowed Symbols</div>
+                    <input type="text" x-model="stratSymbols" placeholder="BTCUSDT,ETHUSDT" class="input font-mono">
+                </div>
+                <div>
+                    <div class="section-label">Daily Loss Limit (USD) <span class="text-red-400 text-xs">– Auto Kill-Switch</span></div>
+                    <input type="number" step="1" min="0" x-model="stratDailyLossLimit" class="input" placeholder="0 = disabled">
+                    <div class="text-xs text-slate-500 mt-1">Bot will halt and enable kill switch if realized daily losses exceed this amount.</div>
+                </div>
+            </div>
+            <button @click="saveStrategy()"
+                    class="btn py-2.5 px-6 font-bold text-white btn-strategy-save">Save Strategy</button>
+        </div>
+
+    </div>
+</div>
+
+</main>
+
+<!-- Live mode warning modal -->
+<div x-show="showLiveModal" x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center modal-overlay">
+    <div class="card p-6 mx-4 modal-card">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 modal-warning-bg">
+                <i class="fas fa-triangle-exclamation text-orange-400"></i>
+            </div>
+            <h3 class="font-bold text-base">Enable Live Trading?</h3>
+        </div>
+        <p class="text-sm text-slate-400 leading-relaxed mb-5">
+            Switching to <strong class="text-orange-400">LIVE mode</strong> will place real spot orders on Binance
+            using your actual funds. Ensure your API keys are saved and you accept the financial risk.
+        </p>
+        <div class="flex gap-3">
+            <button @click="showLiveModal=false" class="btn btn-ghost flex-1 py-2.5">Cancel</button>
+            <button @click="stratPaper=false;showLiveModal=false"
+                    class="btn flex-1 py-2.5 font-bold text-white bg-orange-600 hover:bg-orange-700">
+                Enable Live Mode
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function app() {
+    return {
+        page: 'market',
+        async learnFromHistory() {
+            this.ragSubmitting = true;
+            try {
+                const res = await fetch('/api/rag/ingest-trade-lessons', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    this.toast(`Learned from history: ${data.message}`, 'success');
+                    this.loadRagDocuments();
+                } else {
+                    this.toast(data.detail || 'Learning failed', 'error');
+                }
+            } catch (e) {
+                this.toast('System error during history ingestion', 'error');
+            } finally {
+                this.ragSubmitting = false;
+            }
+        },
+        botRunning: false,
+        tradingMode: 'PAPER',
+        toasts: [], _tid: 0,
+
+        // market
+        search: '', sortBy: 'volume',
+        allCoins: [], filtered: [], symbols: [],
+        selectedCoin: null, selectedCoinData: null,
+        orderBook: null, interval: '1h',
+        chart: null, marketLoading: false,
+
+        // wallets
+        spotBal:[], fundBal:[], totalValue:0, spotVal:0, fundVal:0, showLiveWallet:false,
+
+        // trading
+        targetSym:'BTCUSDT', positions:[], totalPnl:0, realizedPnl:0, unrealizedPnl:0,
+        manualSym:'BTCUSDT', manualSide:'BUY', manualQty:'',
+        decisions:[], decisionsLoading:false,
+
+        // history
+        trades:[], tradePage:1, tradePageSize:20, tradeFilter:'', tradesLoading:false,
+
+        // settings – ai
+        aiProviders:[
+            {name:'openclaw',  display:'Openclaw'},
+            {name:'codex',     display:'Codex CLI'},
+            {name:'ollama',    display:'Ollama'},
+            {name:'opencode',  display:'OpenCode API'},
+            {name:'openai',    display:'OpenAI API'},
+            {name:'anthropic', display:'Anthropic'},
+            {name:'openrouter',display:'OpenRouter'},
+        ],
+        aiProvider:'openclaw',
+        aiBaseUrl:'http://72.60.88.88:46160',
+        aiApiKey:'', aiModel:'',
+        providerCards:[],
+        providerTesting:{},
+        providerModelLoading:{},
+        providerResults:{},
+        openaiKeyConfigured:false,
+        openaiAuthNote:'',
+        codexAvailable:false,
+        codexLoginStatus:'',
+        codexAuthNote:'',
+        opencodeAuthNote:'',
+        showOpenclawKey:false,
+        availableModels:[], modelsLoading:false,
+        aiTesting:false, aiTestResult:'', aiTestOk:false,
+
+        // settings – binance
+        binKey:'', binSecret:'',
+        binanceConfigured:false,
+        binTesting:false, binTestResult:'', binTestOk:false,
+
+        // settings – cmc
+        cmcKey:'',
+
+        // settings – strategy
+        stratPaper:true, stratMaxTrade:100, stratMaxOpen:3,
+        stratConf:0.6, stratSL:2.0, stratTP:4.0,
+        stratInterval:60, stratSymbols:'BTCUSDT,ETHUSDT,SOLUSDT',
+        stratDailyLossLimit: 0,
+        showLiveModal:false,
+        
+        // portfolio strategy settings
+        portfolioStrategy: 'macro', // 'macro' or 'moonshot'
+        portfolioBudget: 50, // 5% to 100%
+        deployingPortfolio: false,
+
+        // analytics hub
+        analyticsData: null,
+        analyticsLoading: false,
+        pnlCurve: [], pnlSummary: {}, pnlLoading: false,
+        scannedAssets: [], scanningMarket: false,
+        btResult: null, btLoading: false, 
+        btSymbols: 'BTCUSDT,ETHUSDT', btDays: 7, 
+        btCapital: 1000, btInterval: '1h',
+
+        // live requests
+        liveRequests: [],
+
+        // rag
+        ragDocuments: [], ragStatusFilter: 'pending_review', ragLoading: false,
+        ragShowAddModal: false,
+        ragNewTitle: '', ragNewType: 'thesis', ragNewHorizon: 'long_term',
+        ragNewAsset: '', ragNewContent: '', ragAutoApprove: false,
+        ragSubmitting: false, ragAddResult: '', ragAddOk: false,
+        ragSearchQuery: '', ragSearchHorizon: '', ragSearching: false,
+        ragSearchResults: [],
+
+        // ─── init ───
+        async init() {
+            this.setupClientErrorLogging();
+            this.connectAlertStream();
+            await Promise.all([this.loadStatus(), this.loadAIConfig(), this.loadStrategy()]);
+            this.loadMarket();
+            this.loadWallets();
+            this.loadTrades();
+            this.loadDecisions();
+            this.loadPositions();
+            this.loadRecommendations();
+            this.loadRagDocuments();
+            if(this.page==='analytics'){ this.loadPnL(); this.loadScanner(); }
+            // Main 30s interval for non-market pages
+            setInterval(()=>{
+                this.loadStatus();
+                this.loadLiveRequests();
+                if(this.page==='wallets') this.loadWallets();
+                if(this.page==='trading'){ this.loadDecisions(); this.loadPositions(); this.loadLiveRequests(); }
+                if(this.page==='portfolio') this.loadRecommendations();
+                if(this.page==='analytics'){ this.loadPnL(); this.loadScanner(); }
+            }, 30000);
+
+            // Market live-ticker: 5s refresh for table + chart + orderbook
+            setInterval(()=>{
+                if(this.page==='market'){
+                    this.loadMarket();
+                    if(this.selectedCoin){
+                        this.updateChartLive();
+                        this.loadOrderBook();
+                    }
+                }
+            }, 5000);
+            // Analytics live-ticker: 1-second refresh (server caches CMC for 60s, Binance for 5s)
+            setInterval(()=>{
+                if(this.page==='analytics') this.loadAnalytics();
+            }, 1000);
+        },
+
+        // ─── WebSocket alert stream ───
+        _wsRetryDelay: 2000,
+        connectAlertStream(){
+            const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            const ws = new WebSocket(`${proto}://${location.host}/ws/prices`);
+            ws.onopen = () => { this._wsRetryDelay = 2000; ws.send(JSON.stringify({action:'ping'})); };
+            ws.onmessage = (e) => {
+                try {
+                    const msg = JSON.parse(e.data);
+                    if (msg.type === 'alert') {
+                        const lvl = msg.level === 'error' ? 'error' : msg.level === 'warning' ? 'warning' : msg.level === 'success' ? 'success' : 'info';
+                        this.toast(msg.message, lvl);
+                    }
+                } catch(_) {}
+            };
+            ws.onclose = () => {
+                setTimeout(() => { this._wsRetryDelay = Math.min(this._wsRetryDelay * 2, 30000); this.connectAlertStream(); }, this._wsRetryDelay);
+            };
+            ws.onerror = () => ws.close();
+        },
+
+        // ─── toasts ───
+        toast(msg, type='info'){
+            const id=++this._tid;
+            this.toasts.push({id,msg,type});
+            setTimeout(()=>this.dismissToast(id), 4500);
+        },
+        dismissToast(id){ this.toasts=this.toasts.filter(t=>t.id!==id); },
+        setupClientErrorLogging(){
+            if(window.__cryptoBotErrorLoggingReady) return;
+            window.__cryptoBotErrorLoggingReady = true;
+            window.addEventListener('error', event => {
+                this.reportClientError({
+                    message: event.message,
+                    stack: event.error?.stack || '',
+                    context: { type: 'window.error', filename: event.filename, line: event.lineno, column: event.colno }
+                });
+            });
+            window.addEventListener('unhandledrejection', event => {
+                const reason = event.reason || {};
+                this.reportClientError({
+                    message: reason.message || String(reason),
+                    stack: reason.stack || '',
+                    context: { type: 'unhandledrejection' }
+                });
+            });
+        },
+        async reportClientError(payload){
+            try{
+                await fetch('/api/logs/client-error', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        ...payload,
+                        url:window.location.href,
+                        userAgent:navigator.userAgent,
+                    }),
+                    keepalive:true,
+                });
+            }catch(e){}
+        },
+
+        // ─── status ───
+        async loadStatus(){
+            try{
+                const r=await fetch('/api/trading/status');
+                const d=await r.json();
+                this.botRunning=d.running||false;
+                this.tradingMode=d.mode||'PAPER';
+                this.totalPnl=d.total_pnl||0;
+                this.realizedPnl=d.realized_pnl||0;
+                this.unrealizedPnl=d.unrealized_pnl||0;
+            }catch(e){}
+        },
+
+        // ─── market ───
+        async loadMarket(){
+            this.marketLoading=true;
+            try{
+                const r=await fetch('/api/market/tickers?limit=100');
+                if(!r.ok) throw new Error();
+                const d=await r.json();
+                this.allCoins=d.tickers||[];
+                this.symbols=this.allCoins.map(c=>c.symbol);
+                this.filterCoins();
+            }catch(e){ this.toast('Failed to load market data','error'); }
+            finally{ this.marketLoading=false; }
+        },
+        filterCoins(){
+            let list=[...this.allCoins];
+            const q=this.search.toUpperCase();
+            if(q) list=list.filter(c=>c.symbol.includes(q));
+            if(this.sortBy==='volume') list.sort((a,b)=>parseFloat(b.volume||0)-parseFloat(a.volume||0));
+            else if(this.sortBy==='change') list.sort((a,b)=>parseFloat(b.change||0)-parseFloat(a.change||0));
+            else if(this.sortBy==='price') list.sort((a,b)=>parseFloat(b.price||0)-parseFloat(a.price||0));
+            this.filtered=list.slice(0,100);
+        },
+        async selectCoin(sym){
+            this.selectedCoin=sym;
+            this.selectedCoinData=this.allCoins.find(c=>c.symbol===sym)||null;
+            await Promise.all([this.loadChart(), this.loadOrderBook()]);
+        },
+        async loadChart(){
+            if(!this.selectedCoin) return;
+            try{
+                const r=await fetch(`/api/market/ohlcv/${this.selectedCoin}?interval=${this.interval}&limit=120`);
+                const d=await r.json();
+                const el=document.getElementById('chart');
+                if(!el) return;
+                if(this.chart){ this.chart.remove(); this.chart=null; this._cs=null; }
+                this.chart=LightweightCharts.createChart(el,{
+                    width:el.clientWidth, height:300,
+                    layout:{background:{type:'solid',color:'#0d1426'},textColor:'#475569'},
+                    grid:{vertLines:{color:'#1a2640'},horzLines:{color:'#1a2640'}},
+                    crosshair:{mode:1},
+                    rightPriceScale:{borderColor:'#1a2640'},
+                    timeScale:{borderColor:'#1a2640',timeVisible:true},
+                });
+                this._cs=this.chart.addCandlestickSeries({
+                    upColor:'#00d4aa',downColor:'#f87171',
+                    borderUpColor:'#00d4aa',borderDownColor:'#f87171',
+                    wickUpColor:'#00d4aa',wickDownColor:'#f87171',
+                });
+                this._cs.setData((d.candles||[]).map(c=>({time:c.time,open:c.open,high:c.high,low:c.low,close:c.close})));
+                this.chart.timeScale().fitContent();
+                window.addEventListener('resize',()=>{
+                    if(this.chart) this.chart.applyOptions({width:el.clientWidth});
+                },{once:true});
+            }catch(e){}
+        },
+        async updateChartLive(){
+            if(!this.selectedCoin || !this._cs) return;
+            try{
+                const r=await fetch(`/api/market/ohlcv/${this.selectedCoin}?interval=${this.interval}&limit=2`);
+                const d=await r.json();
+                const candles = d.candles||[];
+                for(const c of candles){
+                    this._cs.update({time:c.time,open:c.open,high:c.high,low:c.low,close:c.close});
+                }
+                // Also update the selected coin data for the header badge
+                const coinData = this.allCoins.find(x=>x.symbol===this.selectedCoin);
+                if(coinData) this.selectedCoinData = coinData;
+            }catch(e){}
+        },
+        async loadOrderBook(){
+            if(!this.selectedCoin) return;
+            try{
+                const r=await fetch(`/api/market/orderbook/${this.selectedCoin}?limit=14`);
+                if(!r.ok) throw new Error();
+                this.orderBook=await r.json();
+            }catch(e){}
+        },
+
+        // ─── wallets ───
+        async loadWallets(){
+            try{
+                const mode = this.showLiveWallet ? 'LIVE' : 'PAPER';
+                const r=await fetch(`/api/trading/wallet/all?mode=${mode}`);
+                if(!r.ok) throw new Error();
+                const d=await r.json();
+                this.spotBal=d.spot||[];
+                this.fundBal=d.funding||[];
+                this.spotVal=this.spotBal.reduce((s,b)=>s+(b.usd_value||0),0);
+                this.fundVal=this.fundBal.reduce((s,b)=>s+(b.usd_value||0),0);
+                this.totalValue=d.total_estimated_usd||(this.spotVal+this.fundVal);
+            }catch(e){}
+        },
+
+        // ─── trading ───
+        async toggleBot(){
+            const ep=this.botRunning?'/api/trading/stop':'/api/trading/start';
+            try{
+                await fetch(ep,{method:'POST'});
+                this.botRunning=!this.botRunning;
+                this.toast(this.botRunning?'Bot started':'Bot stopped', this.botRunning?'success':'info');
+            }catch(e){ this.toast('Failed to toggle bot','error'); }
+        },
+        async placeOrder(){
+            if(!this.manualQty){ this.toast('Enter a quantity','error'); return; }
+            try{
+                const r=await fetch('/api/trading/manual-order',{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({symbol:this.manualSym,side:this.manualSide,
+                                         quantity:parseFloat(this.manualQty),
+                                         paper_trading:this.tradingMode==='PAPER'})
+                });
+                if(r.ok){
+                    this.toast(`${this.manualSide} order placed for ${this.manualSym}`,'success');
+                    this.manualQty=''; this.loadTrades();
+                } else {
+                    const d=await r.json();
+                    this.toast(d.detail||'Order failed','error');
+                }
+            }catch(e){ this.toast('Order failed','error'); }
+        },
+        quickTrade(sym){ this.manualSym=sym; this.page='trading'; },
+        async loadPositions(){
+            try{
+                const r=await fetch('/api/trading/positions');
+                const d=await r.json();
+                this.positions=d.positions||[];
+            }catch(e){}
+        },
+        async loadDecisions(){
+            this.decisionsLoading=true;
+            try{
+                const r=await fetch('/api/trading/ai-decisions?page=1&size=15');
+                const d=await r.json();
+                this.decisions=d.decisions||[];
+            }catch(e){} finally{ this.decisionsLoading=false; }
+        },
+
+        // ─── history ───
+        async loadTrades(){
+            this.tradesLoading=true;
+            try{
+                let url=`/api/trading/orders?page=${this.tradePage}&size=${this.tradePageSize}`;
+                if(this.tradeFilter) url+=`&symbol=${this.tradeFilter.toUpperCase()}`;
+                const r=await fetch(url);
+                const d=await r.json();
+                this.trades=d.trades||[];
+            }catch(e){} finally{ this.tradesLoading=false; }
+        },
+
+        // ─── settings ───
+        async loadAIConfig(){
+            try{
+                const r=await fetch('/api/settings/ai');
+                const d=await r.json();
+                if(d.current_provider){ this.aiProvider=d.current_provider; }
+                if(d.available_providers?.length){ this.aiProviders=d.available_providers; }
+                this.providerCards=this.normalizeProviderCards(d.provider_cards||this.providerCards);
+                if(!d.provider_cards) this.loadProviderCards();
+                this.aiBaseUrl =
+                    d.current_provider==='opencode'
+                    ? (d.opencode_base_url||'https://opencode.ai/zen/v1')
+                    : (d.openclaw_base_url||'http://72.60.88.88:46160');
+                if(d.current_model) this.aiModel=d.current_model;
+                this.openaiKeyConfigured=!!d.openai_key_configured;
+                this.openaiAuthNote=d.openai_auth_note||'';
+                this.codexAvailable=!!d.codex_available;
+                this.codexLoginStatus=d.codex_login_status||'';
+                this.codexAuthNote=d.codex_auth_note||'';
+                this.opencodeAuthNote=d.opencode_auth_note||'';
+                if(d.cmc_key_configured && !this.cmcKey) this.cmcKey='';
+                await this.loadStatus(); // refresh binance status
+                const s=await fetch('/api/settings/status');
+                const sd=await s.json();
+                this.binanceConfigured=sd.binance_configured||false;
+            }catch(e){}
+        },
+        async loadProviderCards(){
+            try{
+                const r=await fetch('/api/settings/ai/providers');
+                const d=await r.json();
+                this.providerCards=this.normalizeProviderCards(d.providers||[]);
+            }catch(e){
+                this.providerCards=this.normalizeProviderCards(this.providerCards);
+                this.toast('Failed to refresh AI providers','error');
+            }
+        },
+        async loadStrategy(){
+            try{
+                const r=await fetch('/api/settings/strategy');
+                const d=await r.json();
+                this.stratPaper=d.paper_trading;
+                this.stratMaxTrade=d.max_trade_usd;
+                this.stratMaxOpen=d.max_open_trades;
+                this.stratConf=d.confidence_threshold;
+                this.stratSL=d.stop_loss_pct;
+                this.stratTP=d.take_profit_pct;
+                this.stratInterval=d.trading_interval_seconds;
+                this.stratSymbols=(d.allowed_symbols||[]).join(',');
+                this.stratDailyLossLimit = d.daily_loss_limit_usd || 0;
+            }catch(e){}
+        },
+        selectProvider(name){
+            this.aiProvider=name;
+            this.availableModels=[];
+            this.aiTestResult='';
+            if(name==='openclaw') this.aiBaseUrl=this.aiBaseUrl||'http://72.60.88.88:46160';
+            if(name==='ollama')   this.aiBaseUrl='http://localhost:11434';
+            if(name==='opencode') this.aiBaseUrl='https://opencode.ai/zen/v1';
+            if(name==='codex'){
+                this.stratPaper=true;
+                this.tradingMode='PAPER';
+                this.toast('Codex CLI is advisory-only. Paper Trading stays enabled for this provider.','info');
+            }
+        },
+        normalizeProviderCards(cards=[]){
+            const byName={};
+            for(const p of cards||[]) byName[p.name]=p;
+            return this.aiProviders.map(p=>({
+                ...p,
+                enabled: byName[p.name]?.enabled ?? true,
+                configured: byName[p.name]?.configured ?? !p.needs_key,
+                model: byName[p.name]?.model || '',
+                base_url: byName[p.name]?.base_url || '',
+            }));
+        },
+        async toggleProvider(p){
+            const next=!p.enabled;
+            try{
+                const r=await fetch(`/api/settings/ai/providers/${p.name}/enabled`,{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({enabled:next})
+                });
+                const d=await r.json();
+                if(!r.ok) throw new Error(d.detail||'Provider switch failed');
+                p.enabled=d.enabled;
+                this.providerResults[p.name]={ok:true,msg:`${p.display} switched ${d.enabled?'on':'off'}`};
+                this.toast(`${p.display} ${d.enabled?'enabled':'disabled'}`,'success');
+            }catch(e){
+                this.providerResults[p.name]={ok:false,msg:e.message||'Switch failed'};
+                this.toast(e.message||'Provider switch failed','error');
+            }
+        },
+        async testProvider(name){
+            this.providerTesting[name]=true;
+            this.providerResults[name]=null;
+            try{
+                const payload = name===this.aiProvider ? {
+                    model:this.aiModel||null,
+                    api_key:this.aiApiKey||null,
+                    base_url:(name==='openclaw'||name==='ollama'||name==='opencode')?this.aiBaseUrl:null,
+                } : {};
+                const r=await fetch(`/api/settings/ai/providers/${name}/test`,{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(payload)
+                });
+                const d=await r.json();
+                if(r.ok && d.connected){
+                    const count=d.available_models?.length||0;
+                    const suffix=count?` - ${count} model(s) visible`:(d.login_status?` - ${d.login_status}`:'');
+                    this.providerResults[name]={ok:true,msg:`Connected${suffix}`};
+                } else {
+                    this.providerResults[name]={ok:false,msg:d.detail||d.error||'Connection failed'};
+                }
+            }catch(e){
+                this.providerResults[name]={ok:false,msg:'Connection error'};
+            }finally{
+                this.providerTesting[name]=false;
+            }
+        },
+        async fetchProviderModels(name){
+            this.providerModelLoading[name]=true;
+            try{
+                const r=await fetch(`/api/settings/ai/providers/${name}/models`);
+                const d=await r.json();
+                const ms=(d.models||[]).map(m=>m.name||m).filter(Boolean);
+                this.providerResults[name]={
+                    ok:ms.length>0 && !d.error,
+                    msg:ms.length ? `Found ${ms.length} model(s)` : (d.error || (d.errors||[])[0] || 'No models returned')
+                };
+                if(name===this.aiProvider){
+                    this.availableModels=ms;
+                    if(ms.length && !ms.includes(this.aiModel)) this.aiModel=ms[0];
+                }
+                if(ms.length) this.toast(`${name}: found ${ms.length} model(s)`,'success');
+                else this.toast(`${name}: no models returned`,'info');
+            }catch(e){
+                this.providerResults[name]={ok:false,msg:'Failed to fetch models'};
+                this.toast('Failed to fetch models','error');
+            }finally{
+                this.providerModelLoading[name]=false;
+            }
+        },
+        async fetchModels(){
+            this.modelsLoading=true; this.availableModels=[];
+            try{
+                const r=await fetch(`/api/settings/ai/providers/${this.aiProvider}/models`);
+                const d=await r.json();
+                const ms=(d.models||[]).map(m=>m.name||m).filter(Boolean);
+                this.availableModels=ms;
+                if(ms.length){ this.aiModel=ms[0]; this.toast(`Found ${ms.length} model(s)`,'success'); }
+                else this.toast('No models returned','info');
+            }catch(e){ this.toast('Failed to fetch models','error'); }
+            finally{ this.modelsLoading=false; }
+        },
+        async saveAI(){
+            try{
+                await fetch('/api/settings/ai',{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        provider:this.aiProvider, model:this.aiModel||null,
+                        api_key:this.aiApiKey||null,
+                        base_url:(this.aiProvider==='openclaw'||this.aiProvider==='ollama'||this.aiProvider==='opencode')?this.aiBaseUrl:null,
+                    })
+                });
+                if(this.aiProvider==='codex'){
+                    this.stratPaper=true;
+                    this.tradingMode='PAPER';
+                }
+                await this.loadProviderCards();
+                this.toast('AI config saved','success');
+            }catch(e){ this.toast('Failed to save AI config','error'); }
+        },
+        async testAI(){
+            this.aiTesting=true; this.aiTestResult='';
+            await this.saveAI();
+            try{
+                const r=await fetch('/api/settings/test-ai',{method:'POST'});
+                const d=await r.json();
+                if(r.ok){
+                    this.aiTestOk=true;
+                    const mods=d.available_models?.length ? ` — ${d.available_models.length} model(s)` : '';
+                    const rep=d.response?(` — "${d.response.slice(0,60)}"`):'';
+                    this.aiTestResult=`Connected${mods}${rep}`;
+                    this.toast('AI connection successful','success');
+                } else {
+                    this.aiTestOk=false;
+                    this.aiTestResult=d.detail||'Connection failed';
+                    this.toast('AI connection failed','error');
+                }
+            }catch(e){
+                this.aiTestOk=false; this.aiTestResult='Connection error';
+                this.toast('AI connection error','error');
+            }finally{ this.aiTesting=false; }
+        },
+        async saveBin(){
+            if(!this.binKey||!this.binSecret){ this.toast('Enter both key and secret','error'); return; }
+            try{
+                await fetch('/api/settings/binance',{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({api_key:this.binKey,api_secret:this.binSecret})
+                });
+                this.binanceConfigured=true;
+                this.toast('Binance keys saved','success');
+            }catch(e){ this.toast('Failed to save Binance keys','error'); }
+        },
+        async saveCMC(){
+            if(!this.cmcKey){ this.toast('Enter your CMC key','error'); return; }
+            try{
+                await fetch('/api/settings/cmc',{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({api_key:this.cmcKey})
+                });
+                this.toast('CMC key saved','success');
+            }catch(e){ this.toast('Failed to save CMC key','error'); }
+        },
+        async testBinance(){
+            this.binTesting=true; this.binTestResult='';
+            try{
+                const r=await fetch('/api/settings/test-binance',{method:'POST'});
+                const d=await r.json();
+                if(r.ok){
+                    this.binTestOk=true; this.binanceConfigured=true;
+                    const bal=(d.balances||[]).slice(0,3).map(b=>`${b.asset}: ${parseFloat(b.free).toFixed(4)}`).join(', ');
+                    this.binTestResult=`Connected — ${d.account_type||'SPOT'}${bal?' — '+bal:''}`;
+                    this.toast('Binance connected','success');
+                } else {
+                    this.binTestOk=false;
+                    this.binTestResult=d.detail||'Connection failed';
+                    this.toast('Binance connection failed','error');
+                }
+            }catch(e){
+                this.binTestOk=false; this.binTestResult='Connection error';
+                this.toast('Binance connection error','error');
+            }finally{ this.binTesting=false; }
+        },
+        confirmLive(){ this.showLiveModal=true; },
+        async saveStrategy(){
+            const syms=this.stratSymbols.split(',').map(s=>s.trim()).filter(Boolean);
+            try{
+                await fetch('/api/settings/strategy',{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        allowed_symbols:syms,
+                        max_trade_usd:parseFloat(this.stratMaxTrade),
+                        max_open_trades:parseInt(this.stratMaxOpen),
+                        confidence_threshold:parseFloat(this.stratConf),
+                        stop_loss_pct:parseFloat(this.stratSL),
+                        take_profit_pct:parseFloat(this.stratTP),
+                        paper_trading:this.stratPaper,
+                        trading_interval_seconds:parseInt(this.stratInterval),
+                        daily_loss_limit_usd:parseFloat(this.stratDailyLossLimit)||0,
+                    })
+                });
+                if(this.aiProvider==='codex'){
+                    this.stratPaper=true;
+                    this.tradingMode='PAPER';
+                    this.toast('Paper Trading remains enabled while using Codex CLI advisory mode.','info');
+                    return;
+                }
+                this.tradingMode=this.stratPaper?'PAPER':'LIVE';
+                this.toast('Strategy saved','success');
+            }catch(e){ this.toast('Failed to save strategy','error'); }
+        },
+
+        // ─── helpers ───
+        fmtDec(n, decimals=2){
+            return parseFloat(n||0).toFixed(decimals);
+        },
+        fmtNum(n){
+            if(n>=1e9) return (n/1e9).toFixed(1)+'B';
+            if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+            if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+            return parseFloat(n||0).toFixed(0);
+        },
+        fmtBig(n){
+            n = parseFloat(n||0);
+            if(n>=1e12) return (n/1e12).toFixed(2)+'T';
+            if(n>=1e9) return (n/1e9).toFixed(2)+'B';
+            if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+            if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+            return n.toFixed(0);
+        },
+        fngColor(v){
+            v = parseInt(v||50);
+            if(v<=25) return '#ef4444';
+            if(v<=45) return '#f97316';
+            if(v<=55) return '#eab308';
+            if(v<=75) return '#84cc16';
+            return '#22c55e';
+        },
+        fngTextClass(v){
+            v = parseInt(v||50);
+            if(v<=25) return 'text-red-400';
+            if(v<=45) return 'text-orange-400';
+            if(v<=55) return 'text-yellow-400';
+            if(v<=75) return 'text-lime-400';
+            return 'text-emerald-400';
+        },
+
+        // ─── analytics ───
+        async loadAnalytics(){
+            this.analyticsLoading = true;
+            try{
+                const r = await fetch('/api/analytics/overview');
+                if(r.ok){
+                    this.analyticsData = await r.json();
+                }
+            }catch(e){ console.error('Analytics load failed', e); }
+            finally{ this.analyticsLoading = false; }
+        },
+
+        // ─── portfolio ───
+        scanningMarket: false,
+        aiRecommendations: [],
+        aiScannerLogs: ["Awaiting Agent Initialization..."],
+        aiScannerThought: "",
+        async loadRecommendations(){
+            try{
+                const r = await fetch('/api/market/ai-recommendations');
+                const d = await r.json();
+                this.aiRecommendations = d.recommendations || [];
+            }catch(e){}
+        },
+        async runScanner(){
+            this.scanningMarket = true;
+            this.aiScannerLogs = ["Booting up Neural Core..."];
+            this.aiScannerThought = "";
+            
+            // Start polling the backend for thoughts
+            const poller = setInterval(async () => {
+                try {
+                    const statusRes = await fetch('/api/market/ai-scanner/status');
+                    if(statusRes.ok) {
+                        const statusData = await statusRes.json();
+                        this.aiScannerLogs = statusData.logs || [];
+                        this.aiScannerThought = statusData.thought || "";
+                    }
+                } catch(e) {}
+            }, 800);
+
+            try{
+                const r = await fetch(`/api/market/ai-scanner?strategy_type=${this.portfolioStrategy}`, {method:'POST'});
+                const d = await r.json();
+                if(r.ok){
+                    this.toast(`Scan complete! ${d.count} opportunities found.`,'success');
+                    await this.loadRecommendations();
+                } else {
+                    this.toast(d.detail || 'Scanner failed','error');
+                }
+            } catch(e) {
+                this.toast('Failed to run scanner','error');
+            } finally {
+                clearInterval(poller);
+                this.scanningMarket = false;
+            }
+        },
+        async deployPortfolio(){
+            if(!confirm(`Are you sure you want to deploy ${this.portfolioBudget}% of available USDT into this portfolio?`)) return;
+            this.deployingPortfolio = true;
+            try {
+                const r = await fetch('/api/market/portfolio/deploy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ budget_percentage: this.portfolioBudget / 100 })
+                });
+                const d = await r.json();
+                if(r.ok){
+                    this.toast(`Deployment successful! Deployed into ${d.orders.length} assets.`,'success');
+                    this.loadTrades();
+                    this.loadPositions();
+                    this.loadWallets();
+                } else {
+                    this.toast(d.detail || 'Deployment failed','error');
+                }
+            } catch(e) {
+                this.toast('Portfolio deployment failed','error');
+            } finally {
+                this.deployingPortfolio = false;
+            }
+        },
+        async loadPnL() {
+            this.pnlLoading = true;
+            try {
+                const res = await fetch('/api/analytics/pnl');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.pnlCurve = data.curve;
+                    this.pnlSummary = data.summary;
+                    this.initPnLChart();
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.pnlLoading = false;
+            }
+        },
+        initPnLChart() {
+            this.$nextTick(() => {
+                const ctx = document.getElementById('pnlChart');
+                if (!ctx) return;
+                
+                if (this._pnlChart) this._pnlChart.destroy();
+                
+                this._pnlChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: this.pnlCurve.map(p => p.t),
+                        datasets: [{
+                            label: 'PnL',
+                            data: this.pnlCurve.map(p => p.y),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                grid: { color: '#1a2640' },
+                                ticks: { color: '#64748b', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            });
+        },
+        async loadScanner() {
+            try {
+                const res = await fetch('/api/analytics/scanner');
+                if (res.ok) {
+                    this.scannedAssets = await res.json();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        async triggerScanner() {
+            this.scanningMarket = true;
+            try {
+                // In a real app, this might trigger a background task
+                // For now, we just reload the data
+                await this.loadScanner();
+                this.toast('Scanner results refreshed', 'success');
+            } catch (e) {
+                this.toast('Scanner failed', 'error');
+            } finally {
+                this.scanningMarket = false;
+            }
+        },
+        async runBacktest() {
+            this.btLoading = true;
+            this.btResult = null;
+            try {
+                const res = await fetch('/api/analytics/backtest', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        symbols: this.btSymbols.split(',').map(s => s.trim()),
+                        days: parseInt(this.btDays),
+                        interval: this.btInterval,
+                        capital: parseFloat(this.btCapital)
+                    })
+                });
+                if (res.ok) {
+                    this.btResult = await res.json();
+                    this.initBtChart();
+                    this.toast('Backtest complete!', 'success');
+                } else {
+                    const err = await res.json();
+                    this.toast(err.detail || 'Backtest failed', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                this.toast('Backtest error', 'error');
+            } finally {
+                this.btLoading = false;
+            }
+        },
+
+        // --- PHASE 5: Live Requests ---
+        async loadLiveRequests() {
+            try {
+                const res = await fetch('/api/trading/live-requests');
+                if (res.ok) this.liveRequests = await res.json();
+            } catch (e) { console.error(e); }
+        },
+        async approveLiveRequest(req) {
+            if (!confirm(`APPROVE LIVE TRADE: ${req.side} ${req.quantity.toFixed(4)} ${req.symbol} @ $${req.price.toFixed(2)}?`)) return;
+            try {
+                const res = await fetch(`/api/trading/live-requests/${req.id}/approve`, {method: 'POST'});
+                if (res.ok) {
+                    this.toast('Live trade executed!', 'success');
+                    this.loadLiveRequests();
+                    this.loadPortfolio();
+                } else {
+                    const err = await res.json();
+                    this.toast(err.detail || 'Approval failed', 'error');
+                }
+            } catch (e) { this.toast('Approval error', 'error'); }
+        },
+        async rejectLiveRequest(req) {
+            try {
+                const res = await fetch(`/api/trading/live-requests/${req.id}/reject`, {method: 'POST'});
+                if (res.ok) {
+                    this.toast('Request rejected', 'info');
+                    this.loadLiveRequests();
+                }
+            } catch (e) { this.toast('Rejection error', 'error'); }
+        },
+
+        initBtChart() {
+            this.$nextTick(() => {
+                const ctx = document.getElementById('btChart');
+                if (!ctx) return;
+                
+                if (this._btChart) this._btChart.destroy();
+                
+                this._btChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: this.btResult.curve.map(p => p.t),
+                        datasets: [{
+                            label: 'Backtest Equity',
+                            data: this.btResult.curve.map(p => p.y),
+                            borderColor: '#818cf8',
+                            backgroundColor: 'rgba(129, 140, 248, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: {
+                                grid: { color: '#1a2640' },
+                                ticks: { color: '#64748b', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            });
+        },
+        async loadRagDocuments() {
+            this.ragLoading = true;
+            try {
+                let url = '/api/rag/documents';
+                if (this.ragStatusFilter) url += `?status=${this.ragStatusFilter}`;
+                const res = await fetch(url);
+                if (res.ok) this.ragDocuments = await res.json();
+            } catch (e) {
+                console.error(e);
+                this.toast('Failed to load RAG documents', 'error');
+            } finally {
+                this.ragLoading = false;
+            }
+        },
+        async updateRagStatus(id, status) {
+            try {
+                const res = await fetch(`/api/rag/documents/${id}/status`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ status })
+                });
+                if (res.ok) {
+                    this.toast(`Document ${status}`, 'success');
+                    this.loadRagDocuments();
+                } else {
+                    this.toast('Failed to update status', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        async deleteRagDocument(id) {
+            if (!confirm('Delete this document and all its embedded chunks?')) return;
+            try {
+                const res = await fetch(`/api/rag/documents/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    this.toast('Document deleted', 'success');
+                    this.loadRagDocuments();
+                } else {
+                    this.toast('Failed to delete', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        async submitRagDocument() {
+            if (!this.ragNewTitle || !this.ragNewContent) {
+                this.toast('Title and Content are required', 'error');
+                return;
+            }
+            this.ragSubmitting = true;
+            this.ragAddResult = '';
+            try {
+                const res = await fetch('/api/rag/documents', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        title: this.ragNewTitle,
+                        doc_type: this.ragNewType,
+                        horizon: this.ragNewHorizon,
+                        asset: this.ragNewAsset,
+                        content: this.ragNewContent,
+                        auto_approve: this.ragAutoApprove
+                    })
+                });
+                const data = await res.json();
+                this.ragAddOk = res.ok;
+                this.ragAddResult = data.message;
+                if (res.ok) {
+                    this.toast('Document ingested', 'success');
+                    this.loadRagDocuments();
+                    setTimeout(() => {
+                        this.ragShowAddModal = false;
+                        this.ragNewTitle = ''; this.ragNewContent = ''; this.ragNewAsset = '';
+                        this.ragAddResult = '';
+                    }, 2000);
+                }
+            } catch (e) {
+                this.ragAddOk = false;
+                this.ragAddResult = 'System error during ingestion';
+            } finally {
+                this.ragSubmitting = false;
+            }
+        },
+        async searchRag() {
+            if (!this.ragSearchQuery) return;
+            this.ragSearching = true;
+            try {
+                const res = await fetch('/api/rag/search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: this.ragSearchQuery,
+                        horizon: this.ragSearchHorizon || null,
+                        top_k: 5
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    this.ragSearchResults = data.results;
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.ragSearching = false;
+            }
+        }
+    }
+}
+</script>
+</body>
+</html>

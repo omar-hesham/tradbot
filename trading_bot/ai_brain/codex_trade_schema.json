@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "symbol", "quantity_usd", "confidence", "reason"],
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["BUY", "SELL", "HOLD"]
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "quantity_usd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reason": {
+      "type": "string"
+    }
+  }
+}

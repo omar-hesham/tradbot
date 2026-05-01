@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+.venv312/
+
+# Data
+data/
+*.db
+*.db-journal
+*.enc
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OpenClaw / Agent stuff
+.claude/
+.memory/
+.minimax/
+.playwright-mcp/
+.pytest_cache/
+memory/
+temp.txt
+codex_last.txt
+codex_msg.txt
+info.txt
