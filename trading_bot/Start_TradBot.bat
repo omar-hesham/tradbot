@@ -16,17 +16,24 @@ if %errorlevel% neq 0 (
 
 :: Detect Virtual Environment
 set "VENV_PATH="
+if exist ".venv312\Scripts\activate.bat" (
+    set "VENV_PATH=.venv312"
+    goto :ACTIVATE
+)
 if exist ".venv\Scripts\activate.bat" (
     set "VENV_PATH=.venv"
-) else if exist "venv\Scripts\activate.bat" (
+    goto :ACTIVATE
+)
+if exist "venv\Scripts\activate.bat" (
     set "VENV_PATH=venv"
-) else (
-    echo [*] Creating fresh virtual environment (.venv)...
-    python -m venv .venv
-    set "VENV_PATH=.venv"
+    goto :ACTIVATE
 )
 
-:: Activate
+echo [*] Creating fresh virtual environment (.venv)...
+python -m venv .venv
+set "VENV_PATH=.venv"
+
+:ACTIVATE
 echo [*] Activating Environment: %VENV_PATH%
 call %VENV_PATH%\Scripts\activate.bat
 
@@ -35,7 +42,7 @@ echo [*] Checking Pip...
 python -m pip install --upgrade pip --quiet
 
 :: Install Dependencies
-echo [*] Synchronizing dependencies (this may take a minute)...
+echo [*] Synchronizing dependencies...
 python -m pip install -r requirements.txt --quiet
 
 :: Launch
