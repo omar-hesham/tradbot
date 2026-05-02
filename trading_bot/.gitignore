@@ -10,7 +10,8 @@ ENV/
 .venv
 
 # Data
-data/
+data/*
+!data/*.py
 *.db
 *.db-journal
 *.enc
