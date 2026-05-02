@@ -24,6 +24,7 @@ class ReconciliationService:
 
         async for session in get_session():
             await self._reconcile_positions(session)
+            await self._reconcile_from_trade_history(session)
             await self._reconcile_pending_trades(session)
             await session.commit()
 
@@ -79,6 +80,64 @@ class ReconciliationService:
 
         except Exception as e:
             logger.error(f"Error during position reconciliation: {e}")
+
+    async def _reconcile_from_trade_history(self, session: AsyncSession):
+        """
+        Scans trade history to find symbols that should have positions 
+        (Buy exists but no Sell) and restores them if missing.
+        """
+        try:
+            from sqlalchemy import func
+            # Get cumulative quantity per symbol
+            # This is a simplified approach: sum(BUY) - sum(SELL)
+            res = await session.execute(
+                select(Trade.symbol)
+                .group_by(Trade.symbol)
+            )
+            symbols = res.scalars().all()
+
+            for symbol in symbols:
+                # Check if position already exists
+                pos_res = await session.execute(select(Position).where(Position.symbol == symbol))
+                if pos_res.scalar_one_or_none():
+                    continue
+
+                # Calculate cumulative quantity from filled/paper trades
+                # Note: We only count filled or paper trades
+                buy_res = await session.execute(
+                    select(func.sum(Trade.quantity))
+                    .where(Trade.symbol == symbol, Trade.side == "BUY", Trade.status.in_(["filled", "paper"]))
+                )
+                sell_res = await session.execute(
+                    select(func.sum(Trade.quantity))
+                    .where(Trade.symbol == symbol, Trade.side == "SELL", Trade.status.in_(["filled", "paper"]))
+                )
+                
+                total_bought = buy_res.scalar() or 0.0
+                total_sold = sell_res.scalar() or 0.0
+                remaining = total_bought - total_sold
+
+                if remaining > 0.000001:
+                    # Get the last buy price for entry price estimation
+                    last_buy = await session.execute(
+                        select(Trade.price)
+                        .where(Trade.symbol == symbol, Trade.side == "BUY", Trade.status.in_(["filled", "paper"]))
+                        .order_by(Trade.id.desc())
+                        .limit(1)
+                    )
+                    entry_price = last_buy.scalar() or 0.0
+                    
+                    logger.warning(f"RECONCILIATION: Recovered position from history for {symbol} (Qty: {remaining})")
+                    new_pos = Position(
+                        symbol=symbol,
+                        quantity=remaining,
+                        avg_entry_price=entry_price,
+                        unrealized_pnl=0.0
+                    )
+                    session.add(new_pos)
+
+        except Exception as e:
+            logger.error(f"Error during history reconciliation: {e}")
 
     async def _reconcile_pending_trades(self, session: AsyncSession):
         """Checks if pending trades in DB were actually filled or cancelled on Binance."""

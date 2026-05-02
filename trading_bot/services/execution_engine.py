@@ -26,8 +26,11 @@ async def execute_paper_trade(
     """Records a simulated paper trade with a 0.1% fee spread."""
     executed_price = price * 1.001 if recommendation.action == "BUY" else price * 0.999
 
+    from trading.portfolio import record_position
     realized_pnl = None
-    if recommendation.action == "SELL":
+    if recommendation.action == "BUY":
+        await record_position(recommendation.symbol, quantity, executed_price)
+    elif recommendation.action == "SELL":
         realized_pnl = await close_position(recommendation.symbol, executed_price)
 
     logger.info(
@@ -112,7 +115,10 @@ async def execute_live_trade(
             f"@ avg {executed_price:.4f} | OrderId: {order.get('orderId')}"
         )
 
-        if recommendation.action == "SELL":
+        from trading.portfolio import record_position
+        if recommendation.action == "BUY":
+            await record_position(recommendation.symbol, quantity, executed_price)
+        elif recommendation.action == "SELL":
             realized_pnl = await close_position(recommendation.symbol, executed_price)
 
     except Exception as e:
