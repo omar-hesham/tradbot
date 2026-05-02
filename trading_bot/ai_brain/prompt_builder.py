@@ -60,11 +60,14 @@ STRICT OUTPUT FORMAT - you must return ONLY valid JSON, no explanations outside 
 {{
   "action": "BUY" | "SELL" | "HOLD",
   "symbol": "BTCUSDT",
-  "quantity_usd": 50.0,
-  "reason": "Brief explanation max 200 chars",
+  "suggested_allocation_usd": 50.0,
   "confidence": 0.0-1.0,
+  "reasoning_summary": "Brief explanation max 200 chars",
   "stop_loss_pct": 2.0,
-  "take_profit_pct": 4.0
+  "take_profit_pct": 4.0,
+  "order_type": "MARKET" | "LIMIT",
+  "quantity_type": "QUOTE",
+  "max_slippage_pct": 1.0
 }}
 
 RISK RULES:
@@ -250,7 +253,7 @@ def parse_response(response: str) -> Optional[dict]:
             if "error" in data:
                 return data
 
-            required_fields = ["action", "symbol", "quantity_usd", "reason", "confidence"]
+            required_fields = ["action", "symbol", "suggested_allocation_usd", "reasoning_summary", "confidence"]
             # If it's a recommendation object (for scanner) it might have different fields
             if "action" not in data and "suggested_allocation_usd" in data:
                 return _normalize_scanner_response(data)
@@ -262,15 +265,24 @@ def parse_response(response: str) -> Optional[dict]:
                 
             for field in required_fields:
                 if field not in data:
-                    return None
+                    # Fallback for old 'reason' or 'quantity_usd' fields
+                    if field == "reasoning_summary" and "reason" in data:
+                        data["reasoning_summary"] = data["reason"]
+                    elif field == "suggested_allocation_usd" and "quantity_usd" in data:
+                        data["suggested_allocation_usd"] = data["quantity_usd"]
+                    else:
+                        return None
 
             if data["action"] not in ["BUY", "SELL", "HOLD"]:
                 return None
 
-            data["quantity_usd"] = _to_float(data["quantity_usd"])
+            data["suggested_allocation_usd"] = _to_float(data.get("suggested_allocation_usd", 0.0))
             data["confidence"] = _to_float(data["confidence"])
             data["stop_loss_pct"] = _to_float(data.get("stop_loss_pct", 2.0), 2.0)
             data["take_profit_pct"] = _to_float(data.get("take_profit_pct", 4.0), 4.0)
+            data["order_type"] = data.get("order_type", "MARKET")
+            data["quantity_type"] = data.get("quantity_type", "QUOTE")
+            data["max_slippage_pct"] = _to_float(data.get("max_slippage_pct", 1.0), 1.0)
             return data
 
         return None

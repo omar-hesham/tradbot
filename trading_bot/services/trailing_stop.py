@@ -5,7 +5,7 @@ from core.models import Position
 from exchange.binance_client import binance_client
 from config.settings import get_settings
 from services.execution_engine import execute_paper_trade, execute_live_trade
-from ai_brain.schemas import TradeRecommendation
+from ai_brain.schemas import TradeIntent
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ async def enforce_trailing_stops():
                 )
                 
                 # Formulate a forced SELL recommendation
-                rec = TradeRecommendation(
+                rec = TradeIntent(
                     action="SELL",
                     symbol=pos.symbol,
                     current_price=current_price,

@@ -9,7 +9,7 @@ so the daily loss limit tracker has accurate data.
 import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from ai_brain.schemas import TradeRecommendation
+from ai_brain.schemas import TradeIntent
 from core.models import Position
 from trading.portfolio import record_trade, close_position
 from services.post_mortem_engine import post_mortem_engine
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 async def execute_paper_trade(
     db: Session,
-    recommendation: TradeRecommendation,
+    recommendation: TradeIntent,
     price: float,
     quantity: float,
 ) -> None:
@@ -79,7 +79,7 @@ async def execute_paper_trade(
 
 async def execute_live_trade(
     db: Session,
-    recommendation: TradeRecommendation,
+    recommendation: TradeIntent,
     price: float,
     quantity: float,
 ) -> None:

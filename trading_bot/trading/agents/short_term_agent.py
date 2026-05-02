@@ -7,7 +7,7 @@ from ai_brain.prompt_builder import build, parse_response, calculate_indicators
 from ai_brain.provider_factory import get_ai_provider, AINotConfiguredError
 from ai_brain.ai_runtime import auto_ai_session
 from ai_brain.rag import search_knowledge
-from ai_brain.schemas import TradeRecommendation
+from ai_brain.schemas import TradeIntent
 
 from core.database import get_session
 from core.models import AIDecision, AIRecommendation, BotConfig, ScannedAsset
@@ -23,7 +23,7 @@ async def get_target_symbol() -> str:
         config = result.scalar_one_or_none()
         return config.value if config else "BTCUSDT"
 
-async def analyze(symbol: str, price: float = None, is_backtest: bool = False, use_ai: bool = True) -> TradeRecommendation:
+async def analyze(symbol: str, price: float = None, is_backtest: bool = False, use_ai: bool = True) -> TradeIntent:
     """
     Core analysis logic for a specific symbol.
     Used by both the live agent and the backtest engine.
@@ -61,7 +61,7 @@ async def analyze(symbol: str, price: float = None, is_backtest: bool = False, u
                     confidence = 0.65
                     reason = "Heuristic: Bearish SMA Cross"
 
-            return TradeRecommendation(
+            return TradeIntent(
                 action=action,
                 symbol=symbol,
                 confidence=confidence,
@@ -92,7 +92,7 @@ async def analyze(symbol: str, price: float = None, is_backtest: bool = False, u
             paper_trading=strategy.paper_trading,
         )
         
-        system_prompt += "\n\nYou MUST respond ONLY with valid JSON matching the TradeRecommendation schema."
+        system_prompt += "\n\nYou MUST respond ONLY with valid JSON matching the TradeIntent schema."
         
         if rag_text:
             user_prompt = (
@@ -114,7 +114,7 @@ async def analyze(symbol: str, price: float = None, is_backtest: bool = False, u
         confidence = float(parsed.get("confidence", 0.0))
         reasoning = parsed.get("reason", parsed.get("reasoning_summary", ""))
 
-        return TradeRecommendation(
+        return TradeIntent(
             action=action if action in ["BUY", "SELL"] else "HOLD",
             symbol=symbol,
             confidence=confidence,
@@ -150,7 +150,7 @@ async def _get_scanner_symbols(limit: int = 2) -> list[str]:
     return []
 
 
-async def generate_short_term_recommendation() -> TradeRecommendation:
+async def generate_short_term_recommendation() -> TradeIntent:
     """
     Executes the [SHORT-TERM] intelligence protocol.
     Analyzes the configured target symbol plus the top 2 BUY-ranked scanned assets.
@@ -163,7 +163,7 @@ async def generate_short_term_recommendation() -> TradeRecommendation:
     scanner_symbols = await _get_scanner_symbols(limit=2)
     candidates = [target_symbol] + [s for s in scanner_symbols if s != target_symbol]
 
-    best: TradeRecommendation = None
+    best: TradeIntent = None
     for symbol in candidates:
         rec = await analyze(symbol)
         if rec and rec.action in ("BUY", "SELL"):

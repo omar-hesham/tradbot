@@ -161,7 +161,13 @@
             </div>
         </div>
         <!-- Right status -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3">
+            <!-- WebSocket Sync Indicator -->
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#0d1426] border border-[#1a2640]">
+                <div class="w-1.5 h-1.5 rounded-full" :class="wsConnected?'bg-blue-400 pulse-dot':'bg-slate-600'"></div>
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Stream</span>
+            </div>
+
             <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg status-container">
                 <div class="relative w-2 h-2 flex-shrink-0">
                     <div x-show="botRunning" class="pulse-dot absolute inset-0 rounded-full bg-emerald-400 opacity-60"></div>
@@ -1460,10 +1466,12 @@
                     </button>
                 </div>
                 <div class="flex gap-2">
-                    <button @click="ragStatusFilter=''; loadRagDocuments()" :class="ragStatusFilter===''?'bg-blue-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">All</button>
-                    <button @click="ragStatusFilter='pending_review'; loadRagDocuments()" :class="ragStatusFilter==='pending_review'?'bg-orange-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Pending</button>
-                    <button @click="ragStatusFilter='approved'; loadRagDocuments()" :class="ragStatusFilter==='approved'?'bg-emerald-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Approved</button>
-                    <button @click="ragStatusFilter='rejected'; loadRagDocuments()" :class="ragStatusFilter==='rejected'?'bg-red-700 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Rejected</button>
+                    <button @click="ragStatusFilter=''; ragTypeFilter=''; loadRagDocuments()" :class="ragStatusFilter==='' && ragTypeFilter===''?'bg-blue-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">All</button>
+                    <button @click="ragStatusFilter='pending_review'; ragTypeFilter=''; loadRagDocuments()" :class="ragStatusFilter==='pending_review'?'bg-orange-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Pending</button>
+                    <button @click="ragTypeFilter='postmortem'; ragStatusFilter=''; loadRagDocuments()" :class="ragTypeFilter==='postmortem'?'bg-purple-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">
+                        <i class="fas fa-brain mr-1"></i>Lessons
+                    </button>
+                    <button @click="ragStatusFilter='approved'; ragTypeFilter=''; loadRagDocuments()" :class="ragStatusFilter==='approved' && ragTypeFilter===''?'bg-emerald-600 text-white':'bg-[#1a2640] text-slate-400'" class="px-3 py-1 text-xs font-semibold rounded-lg transition-colors">Approved</button>
                 </div>
             </div>
 
@@ -2021,6 +2029,9 @@ function app() {
             }
         },
         botRunning: false,
+        wsConnected: false,
+        reconStatus: 'synced',
+        reconTime: '',
         tradingMode: 'PAPER',
         toasts: [], _tid: 0,
 
@@ -2104,7 +2115,7 @@ function app() {
         liveRequests: [],
 
         // rag
-        ragDocuments: [], ragStatusFilter: 'pending_review', ragLoading: false,
+        ragDocuments: [], ragStatusFilter: 'pending_review', ragTypeFilter: '', ragLoading: false,
         ragShowAddModal: false,
         ragNewTitle: '', ragNewType: 'thesis', ragNewHorizon: 'long_term',
         ragNewAsset: '', ragNewContent: '', ragAutoApprove: false,
@@ -2161,7 +2172,11 @@ function app() {
         connectAlertStream(){
             const proto = location.protocol === 'https:' ? 'wss' : 'ws';
             const ws = new WebSocket(`${proto}://${location.host}/ws/prices`);
-            ws.onopen = () => { this._wsRetryDelay = 2000; ws.send(JSON.stringify({action:'ping'})); };
+            ws.onopen = () => { 
+                this.wsConnected = true;
+                this._wsRetryDelay = 2000; 
+                ws.send(JSON.stringify({action:'ping'})); 
+            };
             ws.onmessage = (e) => {
                 try {
                     const msg = JSON.parse(e.data);
@@ -2172,9 +2187,10 @@ function app() {
                 } catch(_) {}
             };
             ws.onclose = () => {
+                this.wsConnected = false;
                 setTimeout(() => { this._wsRetryDelay = Math.min(this._wsRetryDelay * 2, 30000); this.connectAlertStream(); }, this._wsRetryDelay);
             };
-            ws.onerror = () => ws.close();
+            ws.onerror = () => { this.wsConnected = false; ws.close(); };
         },
 
         // ─── toasts ───
@@ -2228,6 +2244,8 @@ function app() {
                 this.totalPnl=d.total_pnl||0;
                 this.realizedPnl=d.realized_pnl||0;
                 this.unrealizedPnl=d.unrealized_pnl||0;
+                this.reconStatus=d.reconciliation_status||'synced';
+                this.reconTime=d.last_sync_time||'N/A';
             }catch(e){}
         },
 
@@ -2940,9 +2958,11 @@ function app() {
         async loadRagDocuments() {
             this.ragLoading = true;
             try {
-                let url = '/api/rag/documents';
-                if (this.ragStatusFilter) url += `?status=${this.ragStatusFilter}`;
-                const res = await fetch(url);
+                let params = new URLSearchParams();
+                if (this.ragStatusFilter) params.append('status', this.ragStatusFilter);
+                if (this.ragTypeFilter) params.append('doc_type', this.ragTypeFilter);
+                
+                const res = await fetch('/api/rag/documents?' + params.toString());
                 if (res.ok) this.ragDocuments = await res.json();
             } catch (e) {
                 console.error(e);

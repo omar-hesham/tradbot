@@ -40,6 +40,8 @@ class TradingStatusResponse(BaseModel):
     unrealized_pnl: float
     realized_pnl: float
     total_pnl: float
+    reconciliation_status: Optional[str] = "synced"
+    last_sync_time: Optional[str] = None
 
 
 class ManualOrderRequest(BaseModel):

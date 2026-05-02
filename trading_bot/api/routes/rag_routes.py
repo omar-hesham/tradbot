@@ -83,14 +83,20 @@ async def get_rag_stats():
 
 
 @router.get("/documents", response_model=List[RagDocumentSchema])
-async def list_rag_documents(status: Optional[str] = None, horizon: Optional[str] = None):
-    """Lists all knowledge documents, optionally filtered by status and/or horizon."""
+async def list_rag_documents(
+    status: Optional[str] = None,
+    horizon: Optional[str] = None,
+    doc_type: Optional[str] = None,
+):
+    """Lists all knowledge documents, optionally filtered by status, horizon, and/or doc_type."""
     async for session in get_session():
         query = select(KnowledgeDocument)
         if status:
             query = query.where(KnowledgeDocument.status == status)
         if horizon:
             query = query.where(KnowledgeDocument.horizon == horizon)
+        if doc_type:
+            query = query.where(KnowledgeDocument.doc_type == doc_type)
         result = await session.execute(query.order_by(KnowledgeDocument.created_at.desc()))
         docs = result.scalars().all()
 

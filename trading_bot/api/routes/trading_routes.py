@@ -74,6 +74,17 @@ async def get_trading_status():
     total_pnl = realized_pnl + unrealized_pnl
     
     mode = "PAPER" if strategy.paper_trading else "LIVE"
+    
+    # Fetch Reconciliation metadata
+    recon_status = "synced"
+    recon_time = None
+    async for session in get_session():
+        res = await session.execute(select(BotConfig).where(BotConfig.key.in_(["reconciliation_status", "last_reconciliation_time"])))
+        configs = {c.key: c.value for c in res.scalars().all()}
+        recon_status = configs.get("reconciliation_status", "synced")
+        recon_time = configs.get("last_reconciliation_time")
+        break
+
     return TradingStatusResponse(
         running=running,
         mode=mode,
@@ -81,6 +92,8 @@ async def get_trading_status():
         unrealized_pnl=round(unrealized_pnl, 2),
         realized_pnl=round(realized_pnl, 2),
         total_pnl=round(total_pnl, 2),
+        reconciliation_status=recon_status,
+        last_sync_time=recon_time
     )
 
 
@@ -342,8 +355,8 @@ async def approve_live_request(req_id: int):
         # Execute Live Trade
         try:
             # We recreate a mock recommendation object for the execution engine
-            from ai_brain.schemas import TradeRecommendation
-            rec = TradeRecommendation(
+            from ai_brain.schemas import TradeIntent
+            rec = TradeIntent(
                 symbol=req.symbol,
                 action=req.side,
                 current_price=req.price,

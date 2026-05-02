@@ -36,27 +36,53 @@ async def get_confidence_threshold() -> float:
     return float(threshold) if threshold else 0.6
 
 
-async def validate_order(
-    action: str,
+async def validate_exchange_constraints(
     symbol: str,
-    quantity_usd: float,
-    confidence: float,
+    quantity: float,
+    price: float,
+    confidence: float = 1.0
 ) -> ValidationResult:
-    settings = get_settings()
-
-    # Limits removed as per user request
-    pass
-
+    """
+    Consolidated order validation against:
+    1. Allowed symbol list
+    2. Confidence threshold
+    3. Binance LOT_SIZE (Min/Max/Step)
+    4. Binance NOTIONAL (Min)
+    5. Binance PRICE_FILTER (Min/Max/Tick)
+    """
+    # 1. Allowed Symbols
     allowed = await get_allowed_symbols()
     if symbol not in allowed:
         return ValidationResult(valid=False, error=f"Symbol {symbol} not in allowed list")
 
+    # 2. Confidence
     threshold = await get_confidence_threshold()
     if confidence < threshold:
-        return ValidationResult(
-            valid=False,
-            error=f"Confidence {confidence} below threshold {threshold}",
-        )
+        return ValidationResult(valid=False, error=f"Confidence {confidence} < threshold {threshold}")
+
+    # 3. Fetch Exchange Constraints
+    from exchange.exchange_cache import get_symbol_constraints
+    constraints = await get_symbol_constraints(symbol)
+    if not constraints:
+        return ValidationResult(valid=False, error=f"Exchange constraints for {symbol} not found.")
+
+    # 4. LOT_SIZE
+    if quantity < constraints["min_qty"]:
+        return ValidationResult(valid=False, error=f"Qty {quantity} < Min {constraints['min_qty']}")
+    if quantity > constraints["max_qty"]:
+        return ValidationResult(valid=False, error=f"Qty {quantity} > Max {constraints['max_qty']}")
+
+    # 5. NOTIONAL
+    notional = quantity * price
+    if notional < constraints["min_notional"]:
+        return ValidationResult(valid=False, error=f"Notional ${notional:.2f} < Min ${constraints['min_notional']}")
+
+    # 6. PRICE_FILTER (Optional check if price is provided)
+    if price > 0:
+        if price < constraints["min_price"] and constraints["min_price"] > 0:
+             return ValidationResult(valid=False, error=f"Price {price} < Min {constraints['min_price']}")
+        if price > constraints["max_price"] and constraints["max_price"] > 0:
+             return ValidationResult(valid=False, error=f"Price {price} > Max {constraints['max_price']}")
 
     return ValidationResult(valid=True)
 

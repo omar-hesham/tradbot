@@ -8,11 +8,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from rich.logging import RichHandler
 from rich.console import Console
 from config.settings import get_settings
+from core.logging import setup_logging
 from core.database import init_db, close_db
+from core.lifespan import app_lifespan
 # Legacy engine removed in favor of multi-horizon agents
 
 from api.routes import settings_routes, market_routes, trading_routes, ws_routes, analytics_routes, log_routes, rag_routes
@@ -83,196 +83,19 @@ STARTER_DOCUMENTS = [
 ]
 
 
-async def seed_rag_if_empty():
-    """Seeds the knowledge base with starter documents if it has no approved documents."""
-    from sqlalchemy import select, func
-    from core.database import get_session
-    from core.models import KnowledgeDocument
-    from ai_brain.rag import ingest_document
 
-    async for session in get_session():
-        result = await session.execute(select(func.count()).select_from(KnowledgeDocument))
-        count = result.scalar() or 0
-
-    if count > 0:
-        return  # Already has documents
-
-    logging.getLogger(__name__).info("RAG knowledge base is empty — seeding with starter documents...")
-    for doc in STARTER_DOCUMENTS:
-        try:
-            await ingest_document(
-                title=doc["title"],
-                doc_type=doc["doc_type"],
-                horizon=doc["horizon"],
-                content=doc["content"],
-                status="approved",  # Auto-approve starter documents
-            )
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to seed RAG document '{doc['title']}': {e}")
-    logging.getLogger(__name__).info(f"Seeded {len(STARTER_DOCUMENTS)} starter RAG documents.")
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    console.print("[green]Initializing database...[/green]")
-    await init_db()
-
-    console.print("[cyan]Seeding RAG knowledge base if empty...[/cyan]")
-    await seed_rag_if_empty()
-    
-    # Start Telegram Polling
-    from services.telegram_bot import telegram_polling
-    asyncio.create_task(telegram_polling())
-    from services.rag_reliable_feeder import refresh_reliable_market_knowledge
-
-    scheduler = AsyncIOScheduler()
-    settings = get_settings()
-    from trading.safe_runner import run_safe_short_term_agent, run_safe_hustle_agent, run_safe_long_term_agent
-    from trading.agents.risk_manager import run_risk_manager_agent
-    from exchange.exchange_cache import refresh_exchange_info
-    
-    # Prime the exchange info cache before any agent can trade
-    console.print("[cyan]Loading Binance exchange info cache...[/cyan]")
-    await refresh_exchange_info()
-    
-    # 1. Short-Term Execution Agent (Runs frequently using interval defined in UI)
-    scheduler.add_job(
-        run_safe_short_term_agent,
-        "interval",
-        seconds=settings.TRADING_INTERVAL_SECONDS,
-        max_instances=1,
-        coalesce=True,
-        misfire_grace_time=30,
-    )
-    
-    # 1.5 Trailing Stop Enforcement (Runs every 1 minute)
-    from services.trailing_stop import enforce_trailing_stops
-    scheduler.add_job(
-        enforce_trailing_stops,
-        "interval",
-        minutes=1,
-        max_instances=1,
-        coalesce=True,
-    )
-
-    # 2. Hourly exchange info cache refresh (keeps LOT_SIZE / MIN_NOTIONAL accurate)
-    scheduler.add_job(
-        refresh_exchange_info,
-        "interval",
-        hours=1,
-        max_instances=1,
-        coalesce=True,
-    )
-    
-    # 2. Risk Manager Agent (Runs every 4 hours to verify constraints)
-    scheduler.add_job(
-        run_risk_manager_agent,
-        "interval",
-        hours=4, 
-        max_instances=1,
-        coalesce=True,
-    )
-
-    # 3. Market Scanner (Scans 50+ assets every 4 hours)
-    from services.market_scanner import market_scanner
-    scheduler.add_job(
-        market_scanner.scan_market,
-        "interval",
-        hours=4,
-        max_instances=1,
-        coalesce=True,
-        next_run_time=datetime.now() + timedelta(seconds=20),
-    )
-    
-    # 3. Hustle Mode / Swing Agent (Runs daily at 07:00 or every 24h)
-    scheduler.add_job(
-        run_safe_hustle_agent,
-        "interval",
-        hours=24,
-        max_instances=1,
-        coalesce=True,
-    )
-    
-    # 4. Long-Term Macro Thesis Agent (Runs weekly)
-    scheduler.add_job(
-        run_safe_long_term_agent,
-        "interval",
-        days=7,
-        max_instances=1,
-        coalesce=True,
-
-    )
-
-    if settings.RAG_RELIABLE_REFRESH_ON_STARTUP:
-        try:
-            console.print("[cyan]Refreshing reliable-source RAG context...[/cyan]")
-            await asyncio.wait_for(
-                refresh_reliable_market_knowledge(
-                    auto_approve=True,
-                    include_binance=True,
-                    include_cmc=True,
-                ),
-                timeout=90,
-            )
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Reliable RAG startup refresh skipped: {e}")
-
-    if settings.RAG_RELIABLE_AUTO_REFRESH_ENABLED:
-        scheduler.add_job(
-            refresh_reliable_market_knowledge,
-            "interval",
-            hours=max(1, settings.RAG_RELIABLE_REFRESH_HOURS),
-            kwargs={
-                "auto_approve": True,
-                "include_binance": True,
-                "include_cmc": True,
-            },
-            max_instances=1,
-            coalesce=True,
-        )
-
-    scheduler.start()
-    console.print(f"[green]Bot started at {settings.APP_HOST}:{settings.APP_PORT}[/green]")
-    console.print(f"[green]Dashboard: http://{settings.APP_HOST}:{settings.APP_PORT}[/green]")
-    
-    yield
-    
-    scheduler.shutdown()
-    console.print("[yellow]Shutting down...[/yellow]")
-    await close_db()
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
     
-    import os
-    from logging.handlers import RotatingFileHandler
-    
-    os.makedirs("logs", exist_ok=True)
-    
-    # Create file handlers
-    file_handler = RotatingFileHandler("logs/app.log", maxBytes=5*1024*1024, backupCount=3)
-    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-    
-    error_handler = RotatingFileHandler("logs/error.log", maxBytes=5*1024*1024, backupCount=3)
-    error_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s\n%(exc_info)s"))
-    error_handler.setLevel(logging.ERROR)
-    
-    logging.basicConfig(
-        level=settings.LOG_LEVEL,
-        format="%(message)s",
-        handlers=[
-            RichHandler(rich_tracebacks=True), 
-            file_handler, 
-            error_handler
-        ],
-    )
+    setup_logging()
     
     app = FastAPI(
         title="AI Crypto Trading Bot",
         version="1.0",
         description="AI-powered cryptocurrency trading bot with multi-model AI brain",
-        lifespan=lifespan,
+        lifespan=app_lifespan,
     )
     
     app.add_middleware(

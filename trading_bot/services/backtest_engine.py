@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ai_brain.schemas import TradeRecommendation
+from ai_brain.schemas import TradeIntent
 from core.database import get_session
 from core.models import Trade, Position
 from services.risk_engine import risk_engine
@@ -90,7 +90,7 @@ class BacktestEngine:
                             action = "BUY"
                         elif price > prev_close:
                             action = "SELL"
-                    recommendation = TradeRecommendation(
+                    recommendation = TradeIntent(
                         action=action, symbol=sym, confidence=0.8, strategy="time_travel",
                         reasoning_summary="Time Travel Bypass", current_price=price,
                         should_execute=(action != "HOLD"), suggested_allocation_usd=min(self.balance * 0.5, 1000)
@@ -128,7 +128,7 @@ class BacktestEngine:
                 # Check trailing stop (default 2%)
                 stop_price = pos["highest_price"] * 0.98
                 if current_price <= stop_price:
-                    rec = TradeRecommendation(
+                    rec = TradeIntent(
                         action="SELL", symbol=sym, current_price=current_price,
                         suggested_allocation_usd=0, confidence=1.0, strategy="trailing_stop",
                         reasoning_summary="Trailing stop triggered in backtest",
@@ -207,7 +207,7 @@ class BacktestEngine:
             "trades": self.trades
         }
 
-    async def execute_simulated_trade(self, rec: TradeRecommendation, timestamp: datetime):
+    async def execute_simulated_trade(self, rec: TradeIntent, timestamp: datetime):
         slippage_rate = 0.0005  # 0.05%
         fee_rate = 0.001        # 0.1%
 

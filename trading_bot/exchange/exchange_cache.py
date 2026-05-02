@@ -99,24 +99,5 @@ def round_to_step(value: float, step: float) -> float:
 
 
 
-async def validate_order(symbol: str, quantity: float, price: float) -> tuple[bool, str]:
-    """
-    Validates a proposed order against Binance exchange filters.
-    """
-    constraints = await get_symbol_constraints(symbol)
-    if not constraints:
-        return False, f"Symbol {symbol} constraints not found in cache."
 
-    # 1. Min Notional
-    notional = quantity * price
-    if notional < constraints["min_notional"]:
-        return False, f"Notional ${notional:.2f} < Min ${constraints['min_notional']}"
-
-    # 2. LOT_SIZE
-    if quantity < constraints["min_qty"]:
-        return False, f"Qty {quantity} < Min {constraints['min_qty']}"
-    if quantity > constraints["max_qty"]:
-        return False, f"Qty {quantity} > Max {constraints['max_qty']}"
-
-    return True, "Valid"
 

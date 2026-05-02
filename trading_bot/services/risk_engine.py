@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Tuple, Optional
 from datetime import datetime
 
-from ai_brain.schemas import TradeRecommendation
+from ai_brain.schemas import TradeIntent
 from core.bot_state import get_runtime_settings
 from core.models import Position, Trade, DailyLossTracker
 from exchange.exchange_cache import get_symbol_constraints, validate_order
@@ -27,11 +27,20 @@ class RiskEngine:
     - Exchange Constraint validation (LOT_SIZE, MIN_NOTIONAL)
     """
 
-    async def approve(self, session: AsyncSession, recommendation: TradeRecommendation, is_backtest: bool = False) -> Tuple[bool, str]:
+    async def approve(self, session: AsyncSession, recommendation: TradeIntent, is_backtest: bool = False) -> Tuple[bool, str]:
         if not recommendation.should_execute or recommendation.action == "HOLD":
             return False, "Action is HOLD or execution not requested."
 
         settings = await get_runtime_settings(session)
+
+        # 0. RISK KERNEL CHECKS
+        from core.risk_kernel import risk_kernel
+        is_safe, reason = await risk_kernel.is_system_safe()
+        if not is_safe:
+            return False, f"RiskKernel: {reason}"
+        
+        if risk_kernel.is_in_cooldown(recommendation.symbol):
+            return False, f"RiskKernel: Symbol {recommendation.symbol} is in cooldown."
 
         # 1. GLOBAL SAFETY CHECKS
         if settings.kill_switch_enabled:
@@ -109,11 +118,13 @@ class RiskEngine:
 
         quantity = recommendation.suggested_allocation_usd / price
         
-        # Validate against exchange info
-        is_valid, msg = await validate_order(recommendation.symbol, quantity, price)
-
-        if not is_valid:
-            return False, f"Exchange Compliance: {msg}"
+        # 2. EXCHANGE CONSTRAINT VALIDATION
+        from exchange.order_validator import validate_exchange_constraints
+        v_res = await validate_exchange_constraints(
+            recommendation.symbol, quantity, price, confidence=recommendation.confidence
+        )
+        if not v_res.valid:
+            return False, f"Exchange Constraint Error: {v_res.error}"
 
         # 5. INSTITUTIONAL RAG COMPLIANCE
         is_compliant, compliance_msg = await self.check_compliance(recommendation)
@@ -122,7 +133,7 @@ class RiskEngine:
 
         return True, "Approved"
 
-    async def check_compliance(self, recommendation: TradeRecommendation) -> Tuple[bool, str]:
+    async def check_compliance(self, recommendation: TradeIntent) -> Tuple[bool, str]:
         """
         Retrieves institutional rules from RAG and uses AI to verify compliance.
         """

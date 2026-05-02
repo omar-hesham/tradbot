@@ -36,6 +36,11 @@ class BinanceClient:
             return Client("", "")
 
     async def get_ticker_price(self, symbol: str) -> float:
+        from exchange.data_stream import data_stream
+        cached = data_stream.get_price(symbol)
+        if cached:
+            return cached
+
         loop = asyncio.get_event_loop()
         # Public data doesn't need auth
         client = self._get_client(authenticated=False)
@@ -241,19 +246,25 @@ class BinanceClient:
         }
 
     async def get_all_tickers(self) -> list[dict]:
+        """Fetches all tickers, prioritizing WebSocket cache for low latency."""
+        from exchange.data_stream import data_stream
+        ws_prices = data_stream.get_all_prices()
+        if ws_prices:
+            # Match the format of client.get_all_tickers()
+            return [{"symbol": s, "price": str(p)} for s, p in ws_prices.items()]
+
         loop = asyncio.get_event_loop()
         client = self._get_client(authenticated=False)
-        tickers = await loop.run_in_executor(None, client.get_ticker)
-        return [
-            {
-                "symbol": t["symbol"],
-                "price": float(t["lastPrice"]),
-                "change": t.get("priceChangePercent", "0"),
-                "volume": float(t.get("quoteVolume", 0))
-            }
-            for t in tickers
-            if t["symbol"].endswith("USDT") and float(t.get("quoteVolume", 0)) > 0
-        ][:1000]
+        tickers = await loop.run_in_executor(None, client.get_all_tickers)
+        return tickers
+
+    async def get_all_orders(self, symbol: str, limit: int = 10) -> list[dict]:
+        loop = asyncio.get_event_loop()
+        client = self._get_client()
+        orders = await loop.run_in_executor(
+            None, lambda: client.get_all_orders(symbol=symbol, limit=limit)
+        )
+        return orders
 
     async def test_connection(self) -> dict:
         loop = asyncio.get_event_loop()
