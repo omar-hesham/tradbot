@@ -1,44 +1,48 @@
 @echo off
+setlocal enabledelayedexpansion
+
 echo ===================================================
-echo   TradBot AI - Setup and Run Script
+echo   TradBot AI - Digital Command Center Launch
 echo ===================================================
 echo.
 
-:: 1. Check if Python is installed
+:: Detect Python
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Python is not installed or not in your PATH.
-    echo Please install Python 3.10+ and try again.
+    echo [ERROR] Python not found. Please install Python 3.10+.
     pause
     exit /b
 )
 
-:: 2. Create Virtual Environment if it doesn't exist
-if not exist "venv\Scripts\activate.bat" (
-    echo [*] Creating virtual environment...
-    python -m venv venv
+:: Detect Virtual Environment
+set "VENV_PATH="
+if exist ".venv\Scripts\activate.bat" (
+    set "VENV_PATH=.venv"
+) else if exist "venv\Scripts\activate.bat" (
+    set "VENV_PATH=venv"
+) else (
+    echo [*] Creating fresh virtual environment (.venv)...
+    python -m venv .venv
+    set "VENV_PATH=.venv"
 )
 
-:: 3. Activate Virtual Environment
-echo [*] Activating virtual environment...
-call venv\Scripts\activate.bat
+:: Activate and Sync
+echo [*] Activating Environment: !VENV_PATH!
+call !VENV_PATH!\Scripts\activate.bat
 
-:: 4. Install Requirements
-echo [*] Installing dependencies...
-pip install -r requirements.txt
+echo [*] Synchronizing dependencies...
+pip install -r requirements.txt --quiet
 
-:: 5. Start the Application
+:: Launch
 echo.
 echo ===================================================
-echo   Starting the AI Trading Bot Server...
+echo   Bot Status: READY
+echo   Dashboard: http://127.0.0.1:8000/dashboard
 echo ===================================================
 echo.
-echo [*] The dashboard will be available at: http://127.0.0.1:8000/dashboard
-echo [*] Press Ctrl+C to stop the server.
-echo.
 
-:: Automatically open the dashboard in the default browser after 3 seconds
+:: Open Dashboard
 start "" "http://127.0.0.1:8000/dashboard"
 
-:: Run the FastAPI server using Uvicorn
-uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+:: Run Server
+uvicorn main:app --host 0.0.0.0 --port 8000
