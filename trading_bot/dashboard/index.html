@@ -492,8 +492,14 @@
             </div>
             <div class="grid grid-cols-2 gap-3 mt-4">
                 <div class="rounded-xl p-3 stat-mini-card">
-                    <div class="text-xs text-slate-600 mb-1">Positions</div>
-                    <div class="text-2xl font-bold" x-text="positions.length"></div>
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Positions</div>
+                        <button @click="syncPositions()" :disabled="syncing" class="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-widest disabled:opacity-50">
+                            <i class="fas fa-sync-alt mr-1" :class="syncing ? 'fa-spin' : ''"></i>
+                            Sync
+                        </button>
+                    </div>
+                    <div class="text-2xl font-black text-white" x-text="positions.length"></div>
                 </div>
                 <div class="rounded-xl p-3 stat-mini-card">
                     <div class="flex justify-between items-center mb-1">
@@ -2030,6 +2036,7 @@ function app() {
         },
         botRunning: false,
         wsConnected: false,
+        syncing: false,
         reconStatus: 'synced',
         reconTime: '',
         tradingMode: 'PAPER',
@@ -2247,6 +2254,23 @@ function app() {
                 this.reconStatus=d.reconciliation_status||'synced';
                 this.reconTime=d.last_sync_time||'N/A';
             }catch(e){}
+        },
+
+        async syncPositions() {
+            this.syncing = true;
+            try {
+                const res = await fetch('/api/trading/reconcile', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    this.toast('Portfolio synced with Binance!', 'success');
+                    await this.loadStatus();
+                    await this.loadPositions();
+                }
+            } catch (e) {
+                this.toast('Sync failed: ' + e, 'error');
+            } finally {
+                this.syncing = false;
+            }
         },
 
         // ─── market ───

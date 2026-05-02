@@ -97,6 +97,16 @@ async def get_trading_status():
     )
 
 
+@router.post("/reconcile")
+async def trigger_reconciliation():
+    from services.reconciliation_service import reconciliation_service
+    try:
+        await reconciliation_service.run_reconciliation()
+        return {"success": True, "message": "Reconciliation completed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/positions")
 async def get_positions():
     portfolio = await get_portfolio()

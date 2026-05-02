@@ -67,7 +67,15 @@ class ReconciliationService:
                 if balance * price > 5.0:
                     res = await session.execute(select(Position).where(Position.symbol == symbol))
                     if not res.scalar_one_or_none():
-                        logger.warning(f"RECONCILIATION: Ghost Position detected! {symbol} (Qty: {balance}). Manual intervention or position import required.")
+                        logger.warning(f"RECONCILIATION: Ghost Position detected! {symbol} (Qty: {balance}). Importing to local database.")
+                        new_pos = Position(
+                            symbol=symbol,
+                            quantity=balance,
+                            avg_entry_price=price, # Default to current price for imported positions
+                            unrealized_pnl=0.0
+                        )
+                        session.add(new_pos)
+                        # Store metadata about the import in BotConfig or similar if needed
 
         except Exception as e:
             logger.error(f"Error during position reconciliation: {e}")
