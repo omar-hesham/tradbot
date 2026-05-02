@@ -54,6 +54,21 @@ async def execute_paper_trade(
             msg += f" | PnL: ${realized_pnl:+.2f}"
         level = "success" if (realized_pnl or 0) >= 0 else "warning"
         await ws_manager.broadcast_alert(msg, level=level, symbol=recommendation.symbol, pnl=realized_pnl)
+        
+        # Send Telegram Alert
+        from services.telegram_bot import send_telegram_message
+        tg_msg = (
+            f"📄 <b>PAPER TRADE EXECUTED</b>\n"
+            f"<b>Action:</b> {recommendation.action}\n"
+            f"<b>Symbol:</b> {recommendation.symbol}\n"
+            f"<b>Quantity:</b> {quantity}\n"
+            f"<b>Price:</b> ${executed_price:.4f}\n"
+        )
+        if realized_pnl is not None:
+            tg_msg += f"<b>PnL:</b> ${realized_pnl:+.2f}\n"
+        tg_msg += f"<i>{recommendation.reasoning_summary}</i>"
+        await send_telegram_message(tg_msg)
+        
     except Exception:
         pass
 
@@ -133,6 +148,21 @@ async def execute_live_trade(
             msg += f" | PnL: ${realized_pnl:+.2f}"
         level = "success" if (realized_pnl or 0) >= 0 else "error"
         await ws_manager.broadcast_alert(msg, level=level, symbol=recommendation.symbol, pnl=realized_pnl)
+        
+        # Send Telegram Alert
+        from services.telegram_bot import send_telegram_message
+        tg_msg = (
+            f"🚀 <b>LIVE TRADE EXECUTED</b>\n"
+            f"<b>Action:</b> {recommendation.action}\n"
+            f"<b>Symbol:</b> {recommendation.symbol}\n"
+            f"<b>Quantity:</b> {quantity}\n"
+            f"<b>Price:</b> ${executed_price:.4f}\n"
+        )
+        if realized_pnl is not None:
+            tg_msg += f"<b>PnL:</b> ${realized_pnl:+.2f}\n"
+        tg_msg += f"<i>{recommendation.reasoning_summary}</i>"
+        await send_telegram_message(tg_msg)
+        
     except Exception:
         pass
 

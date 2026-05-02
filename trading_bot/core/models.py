@@ -27,6 +27,8 @@ class Position(Base):
     quantity: Mapped[float] = mapped_column(Float, nullable=False)
     avg_entry_price: Mapped[float] = mapped_column(Float, nullable=False)
     unrealized_pnl: Mapped[float] = mapped_column(Float, default=0.0)
+    highest_price: Mapped[float] = mapped_column(Float, nullable=True)
+    trailing_stop_pct: Mapped[float] = mapped_column(Float, nullable=True)
     opened_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

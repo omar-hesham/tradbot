@@ -1067,6 +1067,26 @@
                         <div class="section-label text-[10px]">Starting Capital (USDT)</div>
                         <input type="number" x-model="btCapital" class="input font-mono">
                     </div>
+                    
+                    <div class="space-y-3 pt-3 border-t border-slate-800">
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" x-model="btUseAi" class="peer sr-only">
+                            <div class="w-10 h-5 bg-slate-800 rounded-full peer peer-checked:bg-indigo-500 transition-colors relative after:content-[''] after:absolute after:w-3 after:h-3 after:bg-white after:rounded-full after:top-1 after:left-1 peer-checked:after:translate-x-5 after:transition-transform"></div>
+                            <span class="text-xs text-slate-300 group-hover:text-white transition-colors flex flex-col">
+                                <span class="font-bold">Use AI API Calls</span>
+                                <span class="text-[10px] text-slate-500 font-normal">Costs API quota. Very slow.</span>
+                            </span>
+                        </label>
+
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" x-model="btInject" class="peer sr-only">
+                            <div class="w-10 h-5 bg-slate-800 rounded-full peer peer-checked:bg-emerald-500 transition-colors relative after:content-[''] after:absolute after:w-3 after:h-3 after:bg-white after:rounded-full after:top-1 after:left-1 peer-checked:after:translate-x-5 after:transition-transform"></div>
+                            <span class="text-xs text-slate-300 group-hover:text-white transition-colors flex flex-col">
+                                <span class="font-bold text-emerald-400">Time Travel Injection ⚡</span>
+                                <span class="text-[10px] text-slate-500 font-normal">Save to DB to bypass Readiness waiting</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1077,20 +1097,20 @@
                     <div class="space-y-4">
                         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                             <span class="text-xs text-slate-500 uppercase font-bold">Total Return</span>
-                            <span class="text-lg font-black" :class="btResult.total_return_pct >= 0 ? 'text-emerald-400' : 'text-red-400'"
-                                  x-text="(btResult.total_return_pct >= 0 ? '+' : '') + btResult.total_return_pct.toFixed(2) + '%'"></span>
+                            <span class="text-lg font-black" :class="btResult.summary.pnl_pct >= 0 ? 'text-emerald-400' : 'text-red-400'"
+                                  x-text="(btResult.summary.pnl_pct >= 0 ? '+' : '') + btResult.summary.pnl_pct.toFixed(2) + '%'"></span>
                         </div>
                         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                             <span class="text-xs text-slate-500 uppercase font-bold">Net Profit</span>
-                            <span class="text-lg font-black text-white" x-text="'$' + (btResult.final_capital - btResult.initial_capital).toFixed(2)"></span>
+                            <span class="text-lg font-black text-white" x-text="'$' + (btResult.summary.final_equity - btResult.summary.initial_capital).toFixed(2)"></span>
                         </div>
                         <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                             <span class="text-xs text-slate-500 uppercase font-bold">Win Rate</span>
-                            <span class="text-lg font-black text-blue-400" x-text="btResult.win_rate.toFixed(1) + '%'"></span>
+                            <span class="text-lg font-black text-blue-400" x-text="(btResult.summary.win_rate || 0).toFixed(1) + '%'"></span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-xs text-slate-500 uppercase font-bold">Trades Executed</span>
-                            <span class="text-lg font-black text-slate-300" x-text="btResult.trade_count"></span>
+                            <span class="text-lg font-black text-slate-300" x-text="btResult.summary.total_trades"></span>
                         </div>
                     </div>
                 </div>
@@ -2077,6 +2097,8 @@ function app() {
         btResult: null, btLoading: false, 
         btSymbols: 'BTCUSDT,ETHUSDT', btDays: 7, 
         btCapital: 1000, btInterval: '1h',
+        btUseAi: false,
+        btInject: false,
 
         // live requests
         liveRequests: [],
@@ -2826,7 +2848,9 @@ function app() {
                         symbols: this.btSymbols.split(',').map(s => s.trim()),
                         days: parseInt(this.btDays),
                         interval: this.btInterval,
-                        capital: parseFloat(this.btCapital)
+                        capital: parseFloat(this.btCapital),
+                        use_ai: this.btUseAi,
+                        inject_paper_trades: this.btInject
                     })
                 });
                 if (res.ok) {

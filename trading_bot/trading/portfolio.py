@@ -144,6 +144,11 @@ async def record_position(
             else:
                 # Should not happen for record_position (which is for BUYS)
                 position.quantity = 0
+            
+            # If current price is higher than highest_price, update it.
+            if position.highest_price is None or avg_entry_price > position.highest_price:
+                position.highest_price = avg_entry_price
+                
             session.add(position)
         else:
             # Create new position
@@ -152,6 +157,8 @@ async def record_position(
                 quantity=quantity,
                 avg_entry_price=avg_entry_price,
                 unrealized_pnl=0.0,
+                highest_price=avg_entry_price,
+                trailing_stop_pct=2.0,  # Default trailing stop
             )
             session.add(position)
             

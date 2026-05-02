@@ -19,6 +19,9 @@ class Settings(BaseSettings):
 
     DB_PATH: str = "data/trading_bot.db"
 
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+
     PAPER_TRADING: bool = True
     TRADING_INTERVAL_SECONDS: int = 60
     MAX_TRADE_USD: float = 100000000.0

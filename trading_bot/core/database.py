@@ -47,6 +47,10 @@ def _run_legacy_sqlite_migrations(sync_conn) -> None:
         sync_conn.execute(text("ALTER TABLE trades ADD COLUMN strategy VARCHAR(20)"))
     if not _sqlite_has_column(sync_conn, "trades", "realized_pnl"):
         sync_conn.execute(text("ALTER TABLE trades ADD COLUMN realized_pnl FLOAT"))
+    if not _sqlite_has_column(sync_conn, "positions", "highest_price"):
+        sync_conn.execute(text("ALTER TABLE positions ADD COLUMN highest_price FLOAT"))
+    if not _sqlite_has_column(sync_conn, "positions", "trailing_stop_pct"):
+        sync_conn.execute(text("ALTER TABLE positions ADD COLUMN trailing_stop_pct FLOAT"))
 
 
 async def get_session() -> AsyncSession:

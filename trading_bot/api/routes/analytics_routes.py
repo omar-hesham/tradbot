@@ -194,6 +194,7 @@ class BacktestRequest(BaseModel):
     interval: str = "1h"
     capital: float = 1000.0
     use_ai: bool = False
+    inject_paper_trades: bool = False
 
 @router.post("/backtest")
 async def run_historical_backtest(req: BacktestRequest):
@@ -215,7 +216,8 @@ async def run_historical_backtest(req: BacktestRequest):
                 end_date=end_date,
                 initial_capital=req.capital,
                 interval=req.interval,
-                use_ai=req.use_ai
+                use_ai=req.use_ai,
+                inject_paper_trades=req.inject_paper_trades
             )
         return result
     except Exception as e:

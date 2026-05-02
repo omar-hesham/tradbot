@@ -119,6 +119,10 @@ async def lifespan(app: FastAPI):
 
     console.print("[cyan]Seeding RAG knowledge base if empty...[/cyan]")
     await seed_rag_if_empty()
+    
+    # Start Telegram Polling
+    from services.telegram_bot import telegram_polling
+    asyncio.create_task(telegram_polling())
     from services.rag_reliable_feeder import refresh_reliable_market_knowledge
 
     scheduler = AsyncIOScheduler()
@@ -139,6 +143,16 @@ async def lifespan(app: FastAPI):
         max_instances=1,
         coalesce=True,
         misfire_grace_time=30,
+    )
+    
+    # 1.5 Trailing Stop Enforcement (Runs every 1 minute)
+    from services.trailing_stop import enforce_trailing_stops
+    scheduler.add_job(
+        enforce_trailing_stops,
+        "interval",
+        minutes=1,
+        max_instances=1,
+        coalesce=True,
     )
 
     # 2. Hourly exchange info cache refresh (keeps LOT_SIZE / MIN_NOTIONAL accurate)
