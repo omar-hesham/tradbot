@@ -7,7 +7,7 @@ class TradeIntent(BaseModel):
     current_price: float = 0.0
     suggested_allocation_usd: float = 0.0
     confidence: float = Field(ge=0, le=1)
-    strategy: Literal["hustle", "swing", "macro", "moonshot", "short_term"]
+    strategy: Literal["hustle", "swing", "macro", "moonshot", "short_term", "heuristic"]
     reasoning_summary: str
     entry_conditions: List[str] = []
     risk_factors: List[str] = []

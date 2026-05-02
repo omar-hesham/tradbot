@@ -52,7 +52,7 @@ async def run_risk_manager_agent():
                     "current_price": current_price,
                     "unrealized_usd": unrealized,
                     "pnl_pct": pct_loss,
-                    "opened_at": pos.opened_at,
+                    "opened_at": pos.opened_at.isoformat() if pos.opened_at else None,
                 })
             except Exception:
                 pass
