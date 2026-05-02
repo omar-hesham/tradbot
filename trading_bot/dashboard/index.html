@@ -151,6 +151,7 @@
                                           {id:'portfolio',icon:'fa-briefcase',label:'AI Portfolio'},
                                           {id:'history',icon:'fa-clock-rotate-left',label:'History'},
                                           {id:'knowledge',icon:'fa-book-atlas',label:'RAG Knowledge'},
+                                          {id:'readiness',icon:'fa-traffic-light',label:'Readiness'},
                                           {id:'settings',icon:'fa-sliders',label:'Settings'}]" :key="lnk.id">
                     <button class="nav-link" :class="page===lnk.id?'active':''" @click="page=lnk.id">
                         <i class="fas text-xs" :class="lnk.icon"></i>
@@ -1869,6 +1870,89 @@
     </div>
 </div>
 
+<!-- ════════════════════════════════
+     READINESS MONITOR
+════════════════════════════════ -->
+<div x-show="page==='readiness'" x-cloak x-init="$watch('page', v => { if(v==='readiness') loadReadiness() })">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-black uppercase tracking-tight text-white">System Readiness Monitor</h2>
+            <span class="badge badge-orange text-[10px] uppercase tracking-widest">Training Tracker</span>
+        </div>
+        <button @click="loadReadiness()" class="btn btn-ghost" :disabled="readinessLoading">
+            <i class="fas fa-rotate text-xs" :class="readinessLoading?'fa-spin':''"></i>
+            Refresh
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div x-show="readinessLoading && !readinessData" class="flex justify-center py-12">
+        <div class="skeleton-pulse w-full h-48 rounded-xl"></div>
+    </div>
+
+    <template x-if="readinessData">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Readiness Score Card -->
+            <div class="card p-6 metric-glass text-center relative overflow-hidden"
+                 :class="readinessData.is_ready ? 'border-emerald-500/50 glow-green' : 'border-amber-500/30'">
+                <div class="absolute inset-0 opacity-10" :class="readinessData.is_ready ? 'bg-emerald-500' : 'bg-amber-500'"></div>
+                
+                <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 relative z-10">Competence Score</h3>
+                <div class="text-6xl font-black mb-2 relative z-10"
+                     :class="readinessData.is_ready ? 'text-emerald-400' : 'text-amber-400'"
+                     x-text="readinessData.readiness_score + '%'"></div>
+                
+                <div class="inline-block mt-4 px-4 py-2 rounded-lg font-bold uppercase tracking-wide text-xs relative z-10"
+                     :class="readinessData.is_ready ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'"
+                     x-text="readinessData.recommendation"></div>
+            </div>
+
+            <!-- Metrics Breakdown -->
+            <div class="card p-6 metric-glass">
+                <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6">Evaluation Metrics</h3>
+                
+                <div class="space-y-4">
+                    <!-- Days -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-slate-400"><i class="fas fa-calendar-days mr-2"></i> Paper Trading Duration</span>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono text-white" x-text="readinessData.metrics.days_running + ' Days'"></span>
+                            <i class="fas" :class="readinessData.metrics.days_running >= 14 ? 'fa-check-circle text-emerald-400' : 'fa-clock text-amber-400'"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Trades -->
+                    <div class="flex items-center justify-between border-t border-slate-700/50 pt-4">
+                        <span class="text-slate-400"><i class="fas fa-exchange-alt mr-2"></i> Total Paper Trades</span>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono text-white" x-text="readinessData.metrics.total_paper_trades"></span>
+                            <i class="fas" :class="readinessData.metrics.total_paper_trades >= 50 ? 'fa-check-circle text-emerald-400' : 'fa-clock text-amber-400'"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Win Rate -->
+                    <div class="flex items-center justify-between border-t border-slate-700/50 pt-4">
+                        <span class="text-slate-400"><i class="fas fa-chart-line mr-2"></i> Win Rate</span>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono text-white" x-text="readinessData.metrics.win_rate + '%'"></span>
+                            <i class="fas" :class="readinessData.metrics.win_rate >= 55 ? 'fa-check-circle text-emerald-400' : 'fa-xmark-circle text-red-400'"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Errors -->
+                    <div class="flex items-center justify-between border-t border-slate-700/50 pt-4">
+                        <span class="text-slate-400"><i class="fas fa-bug mr-2"></i> System Errors Logged</span>
+                        <div class="flex items-center gap-3">
+                            <span class="font-mono text-white" x-text="readinessData.metrics.error_count"></span>
+                            <i class="fas" :class="readinessData.metrics.error_count < 100 ? 'fa-check-circle text-emerald-400' : 'fa-triangle-exclamation text-red-400'"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
 </main>
 
 <!-- Live mode warning modal -->
@@ -2006,6 +2090,9 @@ function app() {
         ragSearchQuery: '', ragSearchHorizon: '', ragSearching: false,
         ragSearchResults: [],
 
+        // readiness
+        readinessData: null, readinessLoading: false,
+
         // ─── init ───
         async init() {
             this.setupClientErrorLogging();
@@ -2019,6 +2106,7 @@ function app() {
             this.loadRecommendations();
             this.loadRagDocuments();
             if(this.page==='analytics'){ this.loadPnL(); this.loadScanner(); }
+            if(this.page==='readiness'){ this.loadReadiness(); }
             // Main 30s interval for non-market pages
             setInterval(()=>{
                 this.loadStatus();
@@ -2027,6 +2115,7 @@ function app() {
                 if(this.page==='trading'){ this.loadDecisions(); this.loadPositions(); this.loadLiveRequests(); }
                 if(this.page==='portfolio') this.loadRecommendations();
                 if(this.page==='analytics'){ this.loadPnL(); this.loadScanner(); }
+                if(this.page==='readiness'){ this.loadReadiness(); }
             }, 30000);
 
             // Market live-ticker: 5s refresh for table + chart + orderbook
@@ -2929,6 +3018,19 @@ function app() {
                 console.error(e);
             } finally {
                 this.ragSearching = false;
+            }
+        },
+        async loadReadiness() {
+            this.readinessLoading = true;
+            try {
+                const res = await fetch('/api/analytics/readiness');
+                if (res.ok) {
+                    this.readinessData = await res.json();
+                }
+            } catch (e) {
+                console.error("Failed to load readiness", e);
+            } finally {
+                this.readinessLoading = false;
             }
         }
     }

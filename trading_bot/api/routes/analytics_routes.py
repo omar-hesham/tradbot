@@ -234,3 +234,52 @@ async def trigger_rag_learning():
     except Exception as e:
         logger.exception("RAG learning failed")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/readiness")
+async def get_system_readiness(session: AsyncSession = Depends(get_session)):
+    import os
+    from datetime import datetime
+    
+    result = await session.execute(
+        select(Trade).where(Trade.status == "paper")
+    )
+    trades = result.scalars().all()
+    
+    total_trades = len(trades)
+    win_count = sum(1 for t in trades if t.realized_pnl is not None and t.realized_pnl > 0)
+    win_rate = round((win_count / total_trades * 100) if total_trades > 0 else 0, 2)
+    
+    error_count = 0
+    try:
+        if os.path.exists("logs/error.log"):
+            with open("logs/error.log", "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    if "ERROR" in line or "Exception" in line:
+                        error_count += 1
+    except Exception:
+        pass
+
+    first_trade_date = min([t.created_at for t in trades]) if trades else datetime.utcnow()
+    days_running = (datetime.utcnow() - first_trade_date).days
+    
+    days_score = min(100, (days_running / 14) * 100)
+    trades_score = min(100, (total_trades / 50) * 100)
+    win_score = min(100, (win_rate / 55) * 100) if win_rate > 0 else 0
+    error_penalty = min(50, error_count * 0.5)
+    
+    base_score = (days_score * 0.3) + (trades_score * 0.3) + (win_score * 0.4)
+    final_score = max(0, round(base_score - error_penalty, 2))
+    
+    is_ready = final_score >= 85 and days_running >= 14 and error_count < 100
+
+    return {
+        "readiness_score": final_score,
+        "is_ready": is_ready,
+        "metrics": {
+            "days_running": days_running,
+            "total_paper_trades": total_trades,
+            "win_rate": win_rate,
+            "error_count": error_count
+        },
+        "recommendation": "Ready for Live Trading 🟢" if is_ready else "Needs more testing. Keep running in Paper Mode 🟡"
+    }
